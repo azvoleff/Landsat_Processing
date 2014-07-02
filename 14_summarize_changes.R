@@ -35,7 +35,7 @@ for (sitecode in sitecodes) {
 
     sitename <- as.character(sites$Site.Name.Short[match(sitecode, sites$Site.Name.Code)])
 
-    foreach(freqs_file=iter(freqs_files),
+    freqs <- foreach(freqs_file=iter(freqs_files),
             .packages=c('ggplot2', 'dplyr')) %do% {
 
         time_string <- str_extract(freqs_file, '[0-9]{4}-[0-9]{4}')
@@ -50,16 +50,6 @@ for (sitecode in sitecodes) {
         freqs$Transition <- paste(freqs$t0_name_abbrev, freqs$t1_name_abbrev, sep=' -> ')
 
         classes2plot <- c('Plantation forest', 'Natural forest', 'Bare')
-
-        for (class2plot in classes2plot) {
-            ggplot(freqs[freqs$t0_name == class2plot, ]) +
-                geom_bar(aes(Transition, freq), stat='identity') +
-                ggtitle(paste(sitename, '-', time_string))
-            ggsave(file.path(out_dir, paste0('transitions_', sitecode, 
-                                             '_barplot_', class2plot, '_', 
-                                             time_string, '.png')),
-                   height=img_height, width=img_width, dpi=img_dpi)
-        }
 
 
         # trans_mat <- dcast(data.frame(t0=freqs$t0_name,
@@ -76,10 +66,6 @@ for (sitecode in sitecodes) {
                                                              'Water')))
         freqs$t1_name <- ordered(freqs$t1_name,
                                  levels=rev(levels(freqs$t0_name)))
-
-        # TODO: Need to add in classes with zero occurrence to ensure all 
-        # factors are represented in the freqs list (to ensure that all the 
-        # plots have the same rows/columns across sites
 
         persist <- summarize(group_by(freqs, t0_name),
                              pct=paste0(round(freq[t0_name == t1_name] / sum(freq), 2)))
@@ -100,8 +86,21 @@ for (sitecode in sitecodes) {
                   legend.key.size=unit(1.5, "line"),
                   panel.grid.major=element_blank()) +
         ggsave(file.path(out_dir, paste0('transitions_', sitecode, 
-                                               '_colorplot_', time_string, 
-                                               '.png')),
+                                         '_colorplot_', time_string, '.png')),
+               height=img_height, width=img_width, dpi=img_dpi)
+    }
+
+    # TODO: Need to add in classes with zero occurrence to ensure all factors 
+    # are represented in the freqs list (to ensure that all the plots have the 
+    # same rows/columns across sites
+    #
+    for (class2plot in classes2plot) {
+        ggplot(freqs[freqs$t0_name == class2plot, ]) +
+            geom_bar(aes(Transition, freq), stat='identity') +
+            ggtitle(paste(sitename, '-', time_string))
+        ggsave(file.path(out_dir, paste0('transitions_', sitecode, 
+                                         '_barplot_', class2plot, '_', 
+                                         time_string, '.png')),
                height=img_height, width=img_width, dpi=img_dpi)
     }
 }

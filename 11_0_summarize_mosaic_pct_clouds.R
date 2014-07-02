@@ -75,11 +75,8 @@ filter(cloud_pcts, pct_cloud > 1)
 
 cloud_wide_table <- dcast(cloud_pcts, site ~ date)
 cloud_wide_table[2:ncol(cloud_wide_table)] <- round(cloud_wide_table[2:ncol(cloud_wide_table)], 2)
-write.csv(cloud_wide_table)
+write.csv(cloud_wide_table, file='mosaic_pixel_cloud_pcts.csv', row.names=FALSE)
 
-
-dcast(mosaic_stats, site ~ date, value.var='mosaic_raw')
-dcast(mosaic_stats, site ~ date, value.var='mosaic_norm')
 
 ###############################################################################
 # Summarize DEM mosaics

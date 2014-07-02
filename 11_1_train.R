@@ -22,6 +22,7 @@ predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi',
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
+sitecodes <- sitecodes[!(sitecodes %in% c('NAK', 'UDZ'))]
 
 tr_polys_dir <- file.path(prefix, 'Landsat', 'LCLUC_Training')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
@@ -39,6 +40,7 @@ for (sitecode in sitecodes) {
     }
 
     if (length(image_files) == 0) {
+        message(paste('No predictor files found for', sitecode))
         next
     }
 
@@ -46,7 +48,7 @@ for (sitecode in sitecodes) {
     # Read training data
     tr_pixels_file <- file.path(image_basedir, paste0(sitecode, '_trainingpixels.RData'))
     if (file_test('-f', tr_pixels_file) & !redo_extract) {
-        load(tr_pixels_file)
+        message(paste('Skipping ', sitecode, '- already processed'))
     } else {
         message('Reading training data...')
         tr_polys_file <- paste0(sitecode, '_Landsat_Training_Data.shp')
