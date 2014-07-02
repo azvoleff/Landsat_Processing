@@ -1,0 +1,67 @@
+source('0_settings.R')
+
+library(foreach)
+library(iterators)
+library(doParallel)
+
+registerDoParallel(10)
+
+library(rgeos)
+library(stringr)
+library(tools)
+
+overwrite <- TRUE
+reprocess <- TRUE
+
+sites <- read.csv('Site_Code_Key.csv')
+sitecodes <- sites$Site.Name.Code
+
+sitecodes <- sitecodes[sitecodes != 'BBS']
+
+#imgtype <- 'normalized'
+imgtype <- 'raw'
+
+stopifnot(imgtype %in% c('normalized', 'raw'))
+
+image_files <- c()
+dem_files <- c()
+slopeaspect_files <- c()
+for (sitecode in sitecodes) {
+    base_dir <- file.path(prefix, 'Landsat', sitecode)
+    if (imgtype == 'normalized') {
+        pattern <- '^[a-zA-Z]*_mosaic_normalized_[0-9]{4}.tif$'
+    } else {
+        pattern <- '^[a-zA-Z]*_mosaic_[0-9]{4}.tif$'
+    }
+    these_image_files <- dir(base_dir, pattern=pattern, full.names=TRUE)
+
+    output_files <- paste0(file_path_sans_ext(these_image_files), '_predictors.tif')
+    if (length(these_image_files) >= 1 & !reprocess) {
+        these_image_files <- these_image_files[!file_test('-f', output_files)]
+    }
+
+    if (length(these_image_files) == 0) {
+        next
+    }
+
+    dem_file <- file.path(base_dir, paste0(sitecode, '_mosaic_dem.tif'))
+    slopeaspect_file <- file.path(base_dir, paste0(sitecode, 
+                                                  '_mosaic_slopeaspect.tif'))
+
+    image_files <- c(image_files, these_image_files)
+    dem_files <- c(dem_files, rep(dem_file, length(these_image_files)))
+    slopeaspect_files <- c(slopeaspect_files, rep(slopeaspect_file, 
+                                                  length(these_image_files)))
+}
+
+stopifnot(length(image_files) == length(dem_files))
+stopifnot(length(image_files) == length(slopeaspect_files))
+
+foreach (image_file=iter(image_files), dem_file=iter(dem_files),
+         slopeaspect_file=iter(slopeaspect_files),
+         .packages=c('teamlucc', 'stringr')) %dopar% {
+    dem <- raster(dem_file)
+    slopeaspect <- stack(slopeaspect_file)
+    auto_calc_predictors(image_file, dem, slopeaspect, output_path=NULL, 
+                         cleartmp=TRUE, overwrite=overwrite)
+}
