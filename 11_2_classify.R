@@ -25,7 +25,7 @@ sitecodes <- c('BIF', 'CAX', 'CSN', 'PSH', 'VB')
 
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 for (sitecode in sitecodes) {
-    message(paste0('Performing classification for ', sitecode, '...'))
+    message(paste0('Processing ', sitecode, '...'))
 
     image_files <- dir(image_basedir,
                        pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors.tif$'))

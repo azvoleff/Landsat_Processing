@@ -131,3 +131,10 @@ train_shp_status <- get_train_status('^[a-zA-Z]*_Landsat_Training_Data.shp$', 's
 train_map_status <- get_train_status('^[a-zA-Z]*_Landsat_Training_Map.qgs$', 'map')
 train_statuses <- merge(train_shp_status, train_map_status, all=TRUE)
 train_statuses
+
+        
+dir(file.path(prefix, 'Landsat'), pattern='^[a-zA-Z]*_training_pixels.RData$', 
+    recursive=TRUE)
+
+dir(file.path(prefix, 'Landsat'), pattern='^[a-zA-Z]*_rfmodel.RData$',
+    recursive=TRUE)

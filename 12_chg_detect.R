@@ -19,10 +19,9 @@ sitecodes <- sites$Site.Name.Code
 
 sitecodes <- c('BIF', 'CAX', 'CSN', 'PSH', 'VB')
 
+image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 for (sitecode in sitecodes) {
     message(paste0('Performing change detection for ', sitecode, '...'))
-
-    image_basedir <- file.path(prefix, 'Landsat', sitecode)
 
     classes_files <- dir(image_basedir,
                          pattern=paste0('_predclasses.tif$'),
@@ -32,6 +31,14 @@ for (sitecode in sitecodes) {
                        full.names=TRUE)
     key_files <- dir(image_basedir,
                      pattern='_classeskey.csv$', full.names=TRUE)
+
+    if (length(classes_files) == 0) {
+        next
+    }
+    if (length(classes_files) == 1) {
+        message(paste("cannot process", sitecode, "- only 1 classes file found"))
+        next
+    }
 
     classes_files_years <- gsub('_', '', str_extract(classes_files, 
                                                         '_[0-9]{4}_'))

@@ -4,6 +4,8 @@ library(foreach)
 library(iterators)
 library(doParallel)
 
+n_cpus <- 12
+
 registerDoParallel(n_cpus)
 
 library(rgdal)
@@ -11,7 +13,7 @@ library(stringr)
 library(lubridate)
 library(tools)
 
-redo_extract <- TRUE
+redo_extract <- FALSE
 overwrite <- TRUE
 
 predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi', 
@@ -21,14 +23,11 @@ predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi',
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
-sitecodes <- c('BIF', 'CAX', 'CSN', 'PSH', 'VB')
-sitecodes <- c('PSH', 'VB', 'CSN', 'CAX', 'BIF')
-
 tr_polys_dir <- file.path(prefix, 'Landsat', 'LCLUC_Training')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 
 for (sitecode in sitecodes) {
-    message(paste0('Performing classification for ', sitecode, '...'))
+    message(paste0('Processing ', sitecode, '...'))
 
     image_files <- dir(image_basedir,
                        pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors.tif$'))
@@ -93,16 +92,15 @@ for (sitecode in sitecodes) {
         save(tr_pixels, file=tr_pixels_file)
     }
 
-    ##########################################################################
-    # Train classifiier
-    model_file <- file.path(image_basedir, paste0(sitecode, '_rfmodel.RData'))
-    message('Training classifier...')
-    if (length(tr_pixels) > 30000) {
-        set.seed(0)
-        training_flag(tr_pixels) <- FALSE
-        tr_pixels <- subsample(tr_pixels, 4000, strata="classes", type="testing")
-    }
-    model <- train_classifier(tr_pixels)
-    save(model, file=model_file)
-
+    # ##########################################################################
+    # # Train classifiier
+    # model_file <- file.path(image_basedir, paste0(sitecode, '_rfmodel.RData'))
+    # message('Training classifier...')
+    # if (length(tr_pixels) > 30000) {
+    #     set.seed(0)
+    #     training_flag(tr_pixels) <- FALSE
+    #     tr_pixels <- subsample(tr_pixels, 4000, strata="classes", type="testing")
+    # }
+    # model <- train_classifier(tr_pixels)
+    # save(model, file=model_file)
 }
