@@ -22,6 +22,8 @@ predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi',
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
+sitecodes <- 'RNF'
+
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 for (sitecode in sitecodes) {
     message(paste0('Processing ', sitecode, '...'))
@@ -50,22 +52,33 @@ for (sitecode in sitecodes) {
     for (image_file in image_files) {
         message(paste('Classifying', image_file))
         image_stack <- stack(file.path(image_basedir, image_file))
+        fmask <- raster(file.path(mask_basedir, 
+                                 paste0(file_path_sans_ext(image_file), 
+                                        '_masks', extension(image_file))), 
+                        layer=2)
         # Assign standardized layer names to input image so that different 
         # images can be used with the same model
         names(image_stack) <- predictor_names
 
-        image_stack_mask <- stack(file.path(image_basedir, image_file))
-
         results <- classify(image_stack, model)
 
+        image_mask <- overlay(image_stack[[1]], fmask, function(img, msk) {
+            ret <- is.na(img)
+            ret[ret] <- NA
+            ret[(fmask == 2) | (fmask == 4) | (is.na(fmask)) | (fmask == 255)] <- NA
+            return(ret)
+        })
+        
+        classes <- results$classes * image_mask
         out_base <- file_path_sans_ext(file.path(image_basedir, image_file))
         classes_file <- paste0(out_base, '_predclasses', extension(image_file))
-        writeRaster(results$classes, filename=classes_file, datatype='INT2S', 
+        writeRaster(classes, filename=classes_file, datatype='INT2S', 
                     overwrite=overwrite)
 
-        results$probs <- round(results$probs * 100)
+        probs <- round(results$probs * 100)
+        probs <- probs * image_mask
         probs_file <- paste0(out_base, '_predprobs', extension(image_file))
-        writeRaster(results$probs, filename=probs_file, datatype='INT2S', 
+        writeRaster(probs, filename=probs_file, datatype='INT2S', 
                     overwrite=overwrite)
 
         key_file <- paste0(out_base, '_classeskey.csv')

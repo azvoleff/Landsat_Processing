@@ -19,6 +19,11 @@ sitecodes <- sites$Site.Name.Code
 
 image_basedir <- file.path(lcluc_folder, 'LCLUC_Classifications')
 for (sitecode in sitecodes) {
+    message(paste0('Processing ', sitecode, '...'))
+
+    mask_files <- dir(image_basedir,
+                      pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors_masks.tif$'),
+                      full.names=TRUE)
     classes_files <- dir(image_basedir,
                          pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors_predclasses.tif$'),
                          full.names=TRUE)
@@ -58,15 +63,6 @@ for (sitecode in sitecodes) {
     year_1s <- file_years[1:(length(file_years) - 1)]
     year_2s <- file_years[2:length(file_years)]
 
-    # ### TEMP ###
-    # t1_classes <- stack(classes_file_1s)
-    # t1_probs <- stack(probs_file_1s)
-    # t2_probs <- stack(probs_file_2s)
-    # year_1 <- year_1s[1]
-    # year_2 <- year_2s[1]
-    # output_path <- image_basedir
-    # ### TEMP ###
-    
     # Run change detection on each pair
     ret <- foreach (classes_file_1=iter(classes_file_1s), 
              probs_file_1=iter(probs_file_1s),
@@ -90,19 +86,14 @@ for (sitecode in sitecodes) {
         chg_dir_filename <- file.path(image_basedir,
                                       paste(out_basename, 'chgdir.tif', 
                                             sep='_'))
-        # chg_dir_image <- chg_dir(t1_probs, t2_probs, filename=chg_dir_filename, 
-        #                          overwrite=overwrite)
+        chg_dir_image <- chg_dir(t1_probs, t2_probs, filename=chg_dir_filename, 
+                                 overwrite=overwrite)
 
         chg_mag_filename <- file.path(image_basedir,
                                       paste(out_basename, 'chgmag.tif', 
                                             sep='_'))
-        # TEMPORARY
-        chg_mag_image <- raster(chg_mag_filename)
-        chg_dir_image <- raster(chg_dir_filename)
-        # /TEMPORARY
-        
-        # chg_mag_image <- chg_mag(t1_probs, t2_probs, filename=chg_mag_filename, 
-        #                          overwrite=overwrite)
+        chg_mag_image <- chg_mag(t1_probs, t2_probs, filename=chg_mag_filename, 
+                                 overwrite=overwrite)
        
         chg_threshold <- threshold(chg_mag_image, by=.025)
         
