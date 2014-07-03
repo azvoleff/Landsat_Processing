@@ -96,15 +96,15 @@ for (sitecode in sitecodes) {
         chg_mag_filename <- file.path(image_basedir,
                                       paste(out_basename, 'chgmag.tif', 
                                             sep='_'))
-        # chg_mag_image <- chg_mag(t1_probs, t2_probs, filename=chg_mag_filename, 
-        #                          overwrite=overwrite)
-       
-        chg_threshold <- threshold(chg_mag_image, by=.025)
-        
         # TEMPORARY
         chg_mag_image <- raster(chg_mag_image)
         chg_dir_image <- raster(chg_dir_image)
         # /TEMPORARY
+        
+        # chg_mag_image <- chg_mag(t1_probs, t2_probs, filename=chg_mag_filename, 
+        #                          overwrite=overwrite)
+       
+        chg_threshold <- threshold(chg_mag_image, by=.025)
         
         chg_traj_filename <- file.path(image_basedir,
                                        paste(out_basename, 'chgtraj.tif', sep='_'))
