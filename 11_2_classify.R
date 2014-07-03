@@ -62,24 +62,25 @@ for (sitecode in sitecodes) {
 
         results <- classify(image_stack, model)
 
-        image_mask <- overlay(image_stack[[1]], fmask, function(img, msk) {
-            ret <- is.na(img)
-            ret[ret] <- NA
-            ret[(fmask == 2) | (fmask == 4) | (is.na(fmask)) | (fmask == 255)] <- NA
+        # Make a mask of 1s and NAs, with clear areas marked with 1s
+        image_mask <- overlay(image_stack[[1]], fmask, fun=function(img, msk) {
+            ret <- !is.na(img)
+            ret[!ret] <- NA
+            ret[(msk == 2) | (msk == 4) | (is.na(msk)) | (msk == 255)] <- NA
             return(ret)
         })
         
         classes <- results$classes * image_mask
         out_base <- file_path_sans_ext(file.path(image_basedir, image_file))
         classes_file <- paste0(out_base, '_predclasses', extension(image_file))
-        writeRaster(classes, filename=classes_file, datatype='INT2S', 
-                    overwrite=overwrite)
+        classes <- writeRaster(classes, filename=classes_file, 
+                               datatype='INT2S', overwrite=overwrite)
 
         probs <- round(results$probs * 100)
         probs <- probs * image_mask
         probs_file <- paste0(out_base, '_predprobs', extension(image_file))
-        writeRaster(probs, filename=probs_file, datatype='INT2S', 
-                    overwrite=overwrite)
+        probs <- writeRaster(probs, filename=probs_file, datatype='INT2S', 
+                             overwrite=overwrite)
 
         key_file <- paste0(out_base, '_classeskey.csv')
         write.csv(results$codes, file=key_file, row.names=FALSE)
