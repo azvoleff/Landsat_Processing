@@ -4,8 +4,7 @@ library(foreach)
 library(iterators)
 library(doParallel)
 
-#registerDoParallel(n_cpus)
-registerDoParallel(10)
+registerDoParallel(n_cpus)
 
 library(rgdal)
 library(stringr)
