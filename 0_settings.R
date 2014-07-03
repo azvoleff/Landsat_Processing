@@ -14,13 +14,21 @@ PLOT_DPI <- 300
 
 prefixes <- c('D:/azvoleff/Data', # CI-TEAM
               'H:/Data', # Buffalo drive
-              'O:/Data') # Blue drive
+              'O:/Data', # Blue drive
+              '/localdisk/home/azvoleff') # vertica1
 prefix <- prefixes[match(TRUE, unlist(lapply(prefixes, function(x) file_test('-d', x))))]
+
+lcluc_folder <- c('D:/azvoleff/Data/Landsat', # CI-TEAM
+                  'H:/Data/Landsat', # Buffalo drive
+                  'O:/Data/Landsat', # Blue drive
+                  '/localdisk/home/azvoleff') # vertica1
+lcluc_folder <- lcluc_folder[match(TRUE, unlist(lapply(lcluc_folder, function(x) file_test('-d', x))))]
 
 temps <- c('D:/Temp', # CI-TEAM
            'H:/Temp', # Buffalo drive
            'O:/Temp', # Blue drive HP
-           'R:/Temp') # Blue drive ThinkPad
+           'R:/Temp', # Blue drive ThinkPad
+           '/localdisk/home/azvoleff/temp') # vertica1
 temp <- temps[match(TRUE, unlist(lapply(temps, function(x) file_test('-d', x))))]
 rasterOptions(tmpdir=temp)
 
@@ -29,7 +37,7 @@ rasterOptions(tmpdir=temp)
 if (Sys.info()[4] == 'CI-TEAM') {
     n_cpus <- 6
 } else if (Sys.info()[4] == 'vertica1.team.sdsc.edu') {
-    n_cpus <- 12
+    n_cpus <- 16
 } else {
     n_cpus <- 3
 }
