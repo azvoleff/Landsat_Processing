@@ -4,7 +4,8 @@ library(foreach)
 library(iterators)
 library(doParallel)
 
-registerDoParallel(n_cpus)
+#registerDoParallel(n_cpus)
+registerDoParallel(10)
 
 library(rgdal)
 library(stringr)
@@ -20,8 +21,6 @@ predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi',
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
-
-sitecodes <- c('BIF', 'CAX', 'CSN', 'PSH', 'VB')
 
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 for (sitecode in sitecodes) {
@@ -41,7 +40,10 @@ for (sitecode in sitecodes) {
     }
 
     model_file <- file.path(image_basedir, paste0(sitecode, '_rfmodel.RData'))
-    model <- load(model_file)
+    if (!file_test('-f', model_file)) {
+        next
+    }
+    load(model_file)
 
     ##########################################################################
     # Classify images

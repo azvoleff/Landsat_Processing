@@ -17,12 +17,9 @@ overwrite <- TRUE
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
-sitecodes <- c('BIF', 'CAX', 'CSN', 'PSH', 'VB')
-
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 for (sitecode in sitecodes) {
     message(paste0('Performing change detection for ', sitecode, '...'))
-
     classes_files <- dir(image_basedir,
                          pattern=paste0('_predclasses.tif$'),
                          full.names=TRUE)

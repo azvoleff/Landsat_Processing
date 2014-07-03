@@ -4,8 +4,6 @@ library(foreach)
 library(iterators)
 library(doParallel)
 
-n_cpus <- 12
-
 registerDoParallel(n_cpus)
 
 library(rgdal)
@@ -14,6 +12,7 @@ library(lubridate)
 library(tools)
 
 redo_extract <- FALSE
+redo_training <- FALSE
 overwrite <- TRUE
 
 predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi', 
@@ -40,7 +39,6 @@ for (sitecode in sitecodes) {
     }
 
     if (length(image_files) == 0) {
-        message(paste('No predictor files found for', sitecode))
         next
     }
 
@@ -48,14 +46,13 @@ for (sitecode in sitecodes) {
     # Read training data
     tr_pixels_file <- file.path(image_basedir, paste0(sitecode, '_trainingpixels.RData'))
     if (file_test('-f', tr_pixels_file) & !redo_extract) {
-        message(paste('Skipping ', sitecode, '- already processed'))
+        load(tr_pixels_file)
     } else {
-        message('Reading training data...')
         tr_polys_file <- paste0(sitecode, '_Landsat_Training_Data.shp')
         if (!file_test('-f', file.path(tr_polys_dir, tr_polys_file))) {
-            message(paste('No training data found for', sitecode))
             next
         }
+        message('Reading training data...')
         tr_polys <- readOGR(tr_polys_dir, file_path_sans_ext(tr_polys_file))
 
         # rbind will fail when it tries to rbind a pixel_data object an
@@ -94,15 +91,25 @@ for (sitecode in sitecodes) {
         save(tr_pixels, file=tr_pixels_file)
     }
 
-    # ##########################################################################
-    # # Train classifiier
-    # model_file <- file.path(image_basedir, paste0(sitecode, '_rfmodel.RData'))
-    # message('Training classifier...')
-    # if (length(tr_pixels) > 30000) {
-    #     set.seed(0)
-    #     training_flag(tr_pixels) <- FALSE
-    #     tr_pixels <- subsample(tr_pixels, 4000, strata="classes", type="testing")
-    # }
-    # model <- train_classifier(tr_pixels)
-    # save(model, file=model_file)
+    # Function to subsample any classes in a pixel_data object that have more 
+    # than maxpix pixels
+    subsample_classes <- function(x, maxpix=4000) {
+        lg_classes <- levels(x)[table(x@y) > maxpix]
+        training_flag(x, lg_classes) <- FALSE
+        x <- subsample(x, maxpix, strata='classes', classes=lg_classes, 
+                       type='testing')
+        return(x)
+    }
+    ##########################################################################
+    # Train classifiier
+    if (redo_training) {
+        model_file <- file.path(image_basedir, paste0(sitecode, '_rfmodel.RData'))
+        message('Training classifier...')
+        if (length(tr_pixels) > 30000) {
+            set.seed(0)
+            tr_pixels <- subsample_classes(tr_pixels)
+        }
+        model <- train_classifier(tr_pixels)
+        save(model, file=model_file)
+    }
 }
