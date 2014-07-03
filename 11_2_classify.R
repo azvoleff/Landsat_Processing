@@ -72,3 +72,5 @@ for (sitecode in sitecodes) {
         write.csv(results$codes, file=key_file, row.names=FALSE)
     }
 }
+
+notify('Classification finished.')

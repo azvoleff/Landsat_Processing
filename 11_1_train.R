@@ -113,3 +113,5 @@ for (sitecode in sitecodes) {
         save(model, file=model_file)
     }
 }
+
+notify('Training finished.')
