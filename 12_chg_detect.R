@@ -91,17 +91,22 @@ for (sitecode in sitecodes) {
         chg_dir_filename <- file.path(image_basedir,
                                       paste(out_basename, 'chgdir.tif', 
                                             sep='_'))
-        chg_dir_image <- chg_dir(t1_probs, t2_probs, filename=chg_dir_filename, 
-                                 overwrite=overwrite)
+        # chg_dir_image <- chg_dir(t1_probs, t2_probs, filename=chg_dir_filename, 
+        #                          overwrite=overwrite)
 
         chg_mag_filename <- file.path(image_basedir,
                                       paste(out_basename, 'chgmag.tif', 
                                             sep='_'))
-        chg_mag_image <- chg_mag(t1_probs, t2_probs, filename=chg_mag_filename, 
-                                 overwrite=overwrite)
-
+        # chg_mag_image <- chg_mag(t1_probs, t2_probs, filename=chg_mag_filename, 
+        #                          overwrite=overwrite)
+       
         chg_threshold <- threshold(chg_mag_image, by=.025)
-
+        
+        # TEMPORARY
+        chg_mag_image <- raster(chg_mag_image)
+        chg_dir_image <- raster(chg_dir_image)
+        # /TEMPORARY
+        
         chg_traj_filename <- file.path(image_basedir,
                                        paste(out_basename, 'chgtraj.tif', sep='_'))
         chg_traj_out <- chg_traj(t1_classes, chg_mag_image, chg_dir_image, 
@@ -109,5 +114,10 @@ for (sitecode in sitecodes) {
                                  filename=chg_traj_filename,
                                  classnames=classnames,
                                  overwrite=overwrite)
+
+        chg_traj_lut_filename <- file.path(image_basedir,
+                                           paste(out_basename, 'chgtraj_lut.csv', 
+                                                 sep='_'))
+        write.csv(chg_traj_out$lut, file=chg_traj_lut_filename, row.names=FALSE)
     }
 }
