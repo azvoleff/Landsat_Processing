@@ -19,7 +19,6 @@ sitecodes <- sites$Site.Name.Code
 
 image_basedir <- file.path(lcluc_folder, 'LCLUC_Classifications')
 for (sitecode in sitecodes) {
-    message(paste0('Performing change detection for ', sitecode, '...'))
     classes_files <- dir(image_basedir,
                          pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors_predclasses.tif$'),
                          full.names=TRUE)
@@ -73,7 +72,7 @@ for (sitecode in sitecodes) {
              probs_file_1=iter(probs_file_1s),
              probs_file_2=iter(probs_file_2s), 
              year_1=iter(year_1s), year_2=iter(year_2s), 
-             .packages=c('teamlucc')) %do% {
+             .packages=c('teamlucc')) %dopar% {
         out_basename <- paste0(sitecode, '_', year_1, '-', year_2, 
                                '_chgdetect')
 
@@ -81,7 +80,7 @@ for (sitecode in sitecodes) {
                             pattern=paste0('_chgtraj.tif$'),
                             full.names=TRUE)
         if (length(output_files) >= 1 & !redo_chg_detection) {
-            next
+            return()
         }
 
         t1_classes <- stack(classes_file_1)
@@ -111,3 +110,4 @@ for (sitecode in sitecodes) {
                                  overwrite=overwrite)
     }
 }
+notify('Finished change detection')
