@@ -121,3 +121,5 @@ for (sitecode in sitecodes) {
         write.csv(chg_traj_out$lut, file=chg_traj_lut_filename, row.names=FALSE)
     }
 }
+
+notify('Chg detection finished.')
