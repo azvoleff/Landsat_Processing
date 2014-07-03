@@ -52,7 +52,7 @@ for (sitecode in sitecodes) {
     for (image_file in image_files) {
         message(paste('Classifying', image_file))
         image_stack <- stack(file.path(image_basedir, image_file))
-        fmask <- raster(file.path(mask_basedir, 
+        fmask <- raster(file.path(image_basedir, 
                                  paste0(file_path_sans_ext(image_file), 
                                         '_masks', extension(image_file))), 
                         layer=2)
