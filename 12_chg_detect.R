@@ -62,12 +62,16 @@ for (sitecode in sitecodes) {
     probs_file_2s <- probs_files[2:length(probs_files)]
     year_1s <- file_years[1:(length(file_years) - 1)]
     year_2s <- file_years[2:length(file_years)]
+    mask_file_1s <- mask_files[1:(length(mask_files) - 1)]
+    mask_file_2s <- mask_files[2:length(mask_files)]
 
     # Run change detection on each pair
     ret <- foreach (classes_file_1=iter(classes_file_1s), 
              probs_file_1=iter(probs_file_1s),
              probs_file_2=iter(probs_file_2s), 
              year_1=iter(year_1s), year_2=iter(year_2s), 
+             mask_file_1=iter(mask_file_1s),
+             mask_file_2=iter(mask_file_2s), 
              .packages=c('teamlucc')) %dopar% {
         out_basename <- paste0(sitecode, '_', year_1, '-', year_2, 
                                '_chgdetect')
@@ -79,6 +83,17 @@ for (sitecode in sitecodes) {
             return()
         }
 
+        # Make a mask of 1s and NAs, with clear areas marked with 1s. This 
+        # needs to take into account BOTH images.
+        mask_1 <- raster(mask_file_1, layer=2)
+        mask_2 <- raster(mask_file_2, layer=2)
+        image_mask <- overlay(mask_1, mask_2, fun=function(msk1, msk2) {
+            ret <- !is.na(msk1)
+            ret[(msk1 == 2) | (msk1 == 4) | (is.na(msk1)) | (msk1 == 255)] <- NA
+            ret[(msk2 == 2) | (msk2 == 4) | (is.na(msk2)) | (msk2 == 255)] <- NA
+            return(ret)
+        })
+
         t1_classes <- stack(classes_file_1)
         t1_probs <- stack(probs_file_1)
         t2_probs <- stack(probs_file_2)
@@ -86,14 +101,18 @@ for (sitecode in sitecodes) {
         chg_dir_filename <- file.path(image_basedir,
                                       paste(out_basename, 'chgdir.tif', 
                                             sep='_'))
-        chg_dir_image <- chg_dir(t1_probs, t2_probs, filename=chg_dir_filename, 
-                                 overwrite=overwrite)
+        chg_dir_image <- chg_dir(t1_probs, t2_probs)
+        chg_dir_image <- chg_dir_image * image_mask
+        writeRaster(chg_dir_image, filename=chg_dir_filename, 
+                    overwrite=overwrite, datatype=dataType(chg_dir_image))
 
         chg_mag_filename <- file.path(image_basedir,
                                       paste(out_basename, 'chgmag.tif', 
                                             sep='_'))
-        chg_mag_image <- chg_mag(t1_probs, t2_probs, filename=chg_mag_filename, 
-                                 overwrite=overwrite)
+        chg_mag_image <- chg_mag(t1_probs, t2_probs)
+        chg_mag_image <- chg_mag_image * image_mask
+        writeRaster(chg_mag_image, filename=chg_mag_filename, 
+                    overwrite=overwrite, datatype=dataType(chg_mag_image))
        
         chg_threshold <- threshold(chg_mag_image, by=.025)
         
