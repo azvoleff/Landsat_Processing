@@ -22,8 +22,6 @@ predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi',
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
-sitecodes <- 'RNF'
-
 image_basedir <- file.path(lcluc_folder, 'LCLUC_Classifications')
 for (sitecode in sitecodes) {
     message(paste0('Processing ', sitecode, '...'))
