@@ -21,14 +21,14 @@ image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 for (sitecode in sitecodes) {
     message(paste0('Performing change detection for ', sitecode, '...'))
     classes_files <- dir(image_basedir,
-                         pattern=paste0('_predclasses.tif$'),
+                         pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors_predclasses.tif$'),
                          full.names=TRUE)
     probs_files <- dir(image_basedir,
-                       pattern=paste0('_predprobs.tif$'),
+                       pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors_predprobs.tif$'),
                        full.names=TRUE)
     key_files <- dir(image_basedir,
-                     pattern='_classeskey.csv$', full.names=TRUE)
-
+                     pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors_classeskey.csv$'),
+                     full.names=TRUE)
     if (length(classes_files) == 0) {
         next
     }
