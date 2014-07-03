@@ -97,8 +97,8 @@ for (sitecode in sitecodes) {
                                       paste(out_basename, 'chgmag.tif', 
                                             sep='_'))
         # TEMPORARY
-        chg_mag_image <- raster(chg_mag_image)
-        chg_dir_image <- raster(chg_dir_image)
+        chg_mag_image <- raster(chg_mag_filename)
+        chg_dir_image <- raster(chg_dir_filename)
         # /TEMPORARY
         
         # chg_mag_image <- chg_mag(t1_probs, t2_probs, filename=chg_mag_filename, 
