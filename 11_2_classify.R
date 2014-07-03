@@ -24,7 +24,7 @@ sitecodes <- sites$Site.Name.Code
 
 sitecodes <- 'RNF'
 
-image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
+image_basedir <- file.path(lcluc_folder, 'LCLUC_Classifications')
 for (sitecode in sitecodes) {
     message(paste0('Processing ', sitecode, '...'))
 
