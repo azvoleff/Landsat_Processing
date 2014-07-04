@@ -4,7 +4,7 @@ library(foreach)
 library(iterators)
 library(doParallel)
 
-registerDoParallel(n_cpus)
+registerDoParallel(4)
 
 library(rgdal)
 library(stringr)
@@ -25,8 +25,6 @@ image_files <- c()
 model_files <- c()
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 for (sitecode in sitecodes) {
-    message(paste0('Processing ', sitecode, '...'))
-
     these_image_files <- dir(image_basedir,
                        pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors.tif$'))
 
@@ -56,8 +54,11 @@ num_res <- foreach (image_file=iter(image_files),
                     model_file=iter(model_files),
                     .packages=c('teamlucc', 'tools', 'stringr'),
                     .inorder=FALSE) %dopar% {
-    rasterOptions(tmpdir=paste0(tempdir(), '_raster'))
-
+    raster_tmpdir <- paste0(tempdir(), '_raster_',
+                            paste(sample(c(letters, 0:9), 15), collapse=''))
+    dir.create(raster_tmpdir)
+    rasterOptions(tmpdir=raster_tmpdir)
+    
     sitecode <- str_extract(basename(image_file), '^[a-zA-Z]')
 
     load(model_file)
@@ -97,7 +98,10 @@ num_res <- foreach (image_file=iter(image_files),
     write.csv(results$codes, file=key_file, row.names=FALSE)
 
     removeTmpFiles(h=0)
+    unlink(raster_tmpdir)
 
+    library(notifyR)
+    notify(paste0('Finished classifying ', image_file))
     return(1)
 }
 
