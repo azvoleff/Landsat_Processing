@@ -55,7 +55,7 @@ notify(paste0('Starting classification. ', length(image_files), ' images to proc
 num_res <- foreach (image_file=iter(image_files),
                     model_file=iter(model_files),
                     .packages=c('teamlucc', 'tools', 'stringr'),
-                    .inorder=FALSE) {
+                    .inorder=FALSE)) {
     rasterOptions(tmpdir=paste0(tempdir(), '_raster'))
 
     sitecode <- str_extract(basename(image_file), '^[a-zA-Z]')
