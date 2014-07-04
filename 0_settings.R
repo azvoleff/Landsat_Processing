@@ -15,20 +15,14 @@ PLOT_DPI <- 300
 prefixes <- c('D:/azvoleff/Data', # CI-TEAM
               'H:/Data', # Buffalo drive
               'O:/Data', # Blue drive
-              '/localdisk/home/azvoleff') # vertica1
+              '/localdisk/home/azvoleff/Data') # vertica1
 prefix <- prefixes[match(TRUE, unlist(lapply(prefixes, function(x) file_test('-d', x))))]
-
-lcluc_folder <- c('D:/azvoleff/Data/Landsat', # CI-TEAM
-                  'H:/Data/Landsat', # Buffalo drive
-                  'O:/Data/Landsat', # Blue drive
-                  '/localdisk/home/azvoleff') # vertica1
-lcluc_folder <- lcluc_folder[match(TRUE, unlist(lapply(lcluc_folder, function(x) file_test('-d', x))))]
 
 temps <- c('D:/Temp', # CI-TEAM
            'H:/Temp', # Buffalo drive
            'O:/Temp', # Blue drive HP
            'R:/Temp', # Blue drive ThinkPad
-           '/localdisk/home/azvoleff/temp') # vertica1
+           '/localdisk/home/azvoleff/Temp') # vertica1
 temp <- temps[match(TRUE, unlist(lapply(temps, function(x) file_test('-d', x))))]
 rasterOptions(tmpdir=temp)
 

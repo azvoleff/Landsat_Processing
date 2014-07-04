@@ -25,8 +25,8 @@ sitecodes <- sitecodes[!(sitecodes %in% c('NAK', 'UDZ'))]
 
 tr_polys_dir <- file.path(prefix, 'Landsat', 'LCLUC_Training')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
-
 for (sitecode in sitecodes) {
+    rasterOptions(tmpdir=paste0(tempdir(), '_raster'))
     message(paste0('Processing ', sitecode, '...'))
 
     image_files <- dir(image_basedir,
@@ -112,6 +112,8 @@ for (sitecode in sitecodes) {
         model <- train_classifier(tr_pixels)
         save(model, file=model_file)
     }
+
+    removeTmpFiles(h=0)
 }
 
 notify('Training finished.')

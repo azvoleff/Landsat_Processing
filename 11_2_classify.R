@@ -21,67 +21,84 @@ predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi',
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
-image_basedir <- file.path(lcluc_folder, 'LCLUC_Classifications')
+image_files <- c()
+model_files <- c()
+image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 for (sitecode in sitecodes) {
     message(paste0('Processing ', sitecode, '...'))
 
-    image_files <- dir(image_basedir,
+    these_image_files <- dir(image_basedir,
                        pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors.tif$'))
 
-    output_files <- paste0(file_path_sans_ext(image_files), '_classified.tif')
+    output_files <- paste0(file_path_sans_ext(these_image_files), '_classified.tif')
 
-    if (length(image_files) >= 1 & !overwrite) {
-        image_files <- image_files[!file_test('-f', output_files)]
+    if (length(these_image_files) >= 1 & !overwrite) {
+        these_image_files <- these_image_files[!file_test('-f', output_files)]
     }
 
-    if (length(image_files) == 0) {
+    if (length(these_image_files) == 0) {
         next
     }
 
-    model_file <- file.path(image_basedir, paste0(sitecode, '_rfmodel.RData'))
-    if (!file_test('-f', model_file)) {
+    this_model_file <- file.path(image_basedir, paste0(sitecode, '_rfmodel.RData'))
+    if (!file_test('-f', this_model_file)) {
         next
     }
-    load(model_file)
 
-    ##########################################################################
-    # Classify images
-    for (image_file in image_files) {
-        message(paste('Classifying', image_file))
-        image_stack <- stack(file.path(image_basedir, image_file))
-        fmask <- raster(file.path(image_basedir, 
-                                 paste0(file_path_sans_ext(image_file), 
-                                        '_masks', extension(image_file))), 
-                        layer=2)
-        # Assign standardized layer names to input image so that different 
-        # images can be used with the same model
-        names(image_stack) <- predictor_names
-
-        results <- classify(image_stack, model)
-
-        # Make a mask of 1s and NAs, with clear areas marked with 1s
-        image_mask <- overlay(image_stack[[1]], fmask, fun=function(img, msk) {
-            ret <- !is.na(img)
-            ret[!ret] <- NA
-            ret[(msk == 2) | (msk == 4) | (is.na(msk)) | (msk == 255)] <- NA
-            return(ret)
-        })
-        
-        classes <- results$classes * image_mask
-        out_base <- file_path_sans_ext(file.path(image_basedir, image_file))
-        classes_file <- paste0(out_base, '_predclasses', extension(image_file))
-        classes <- writeRaster(classes, filename=classes_file, 
-                               datatype='INT2S', overwrite=overwrite)
-
-        probs <- round(results$probs * 100)
-        probs <- probs * image_mask
-        probs_file <- paste0(out_base, '_predprobs', extension(image_file))
-        probs <- writeRaster(probs, filename=probs_file, datatype='INT2S', 
-                             overwrite=overwrite)
-
-        key_file <- paste0(out_base, '_classeskey.csv')
-        write.csv(results$codes, file=key_file, row.names=FALSE)
-    }
+    image_files <- c(image_files, these_image_files)
+    model_files <- c(model_files, rep(this_model_file, length(these_image_files)))
 }
 
-notify('Classification finished.')
+stopifnot(length(image_files) == length(model_files))
+
+notify(paste0('Starting classification. ', length(image_files), ' images to process.'))
+num_res <- foreach (image_file=iter(image_files),
+                    model_file=iter(model_files),
+                    .packages=c('teamlucc', 'tools', 'stringr'),
+                    .inorder=FALSE) {
+    rasterOptions(tmpdir=paste0(tempdir(), '_raster'))
+
+    sitecode <- str_extract(basename(image_file), '^[a-zA-Z]')
+
+    load(model_file)
+
+    image_stack <- stack(file.path(image_basedir, image_file))
+    fmask <- raster(file.path(image_basedir, 
+                             paste0(file_path_sans_ext(image_file), 
+                                    '_masks', extension(image_file))), 
+                    layer=2)
+    # Assign standardized layer names to input image so that different 
+    # images can be used with the same model
+    names(image_stack) <- predictor_names
+
+    results <- classify(image_stack, model)
+
+    # Make a mask of 1s and NAs, with clear areas marked with 1s
+    image_mask <- overlay(image_stack[[1]], fmask, fun=function(img, msk) {
+        ret <- !is.na(img)
+        ret[!ret] <- NA
+        ret[(msk == 2) | (msk == 4) | (is.na(msk)) | (msk == 255)] <- NA
+        return(ret)
+    })
+    
+    classes <- results$classes * image_mask
+    out_base <- file_path_sans_ext(file.path(image_basedir, image_file))
+    classes_file <- paste0(out_base, '_predclasses', extension(image_file))
+    classes <- writeRaster(classes, filename=classes_file, 
+                           datatype='INT2S', overwrite=overwrite)
+
+    probs <- round(results$probs * 100)
+    probs <- probs * image_mask
+    probs_file <- paste0(out_base, '_predprobs', extension(image_file))
+    probs <- writeRaster(probs, filename=probs_file, datatype='INT2S', 
+                         overwrite=overwrite)
+
+    key_file <- paste0(out_base, '_classeskey.csv')
+    write.csv(results$codes, file=key_file, row.names=FALSE)
+
+    removeTmpFiles(h=0)
+
+    return(1)
+}
+
+notify(paste0('Classification finished. Classified ', sum(num_res), ' images.'))

@@ -17,8 +17,10 @@ overwrite <- TRUE
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
-image_basedir <- file.path(lcluc_folder, 'LCLUC_Classifications')
+image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 for (sitecode in sitecodes) {
+    rasterOptions(tmpdir=paste0(tempdir(), '_raster'))
+
     message(paste0('Processing ', sitecode, '...'))
 
     mask_files <- dir(image_basedir,
@@ -129,6 +131,8 @@ for (sitecode in sitecodes) {
                                                  sep='_'))
         write.csv(chg_traj_out$lut, file=chg_traj_lut_filename, row.names=FALSE)
     }
+
+    removeTmpFiles(h=0)
 }
 
 notify('Finished change detection')
