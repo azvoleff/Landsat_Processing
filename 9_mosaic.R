@@ -149,7 +149,7 @@ for (sitecode in sitecodes) {
                                overwrite=overwrite, multi=TRUE, 
                                wo=paste0("NUM_THREADS=", n_cpus), 
                                te=mosaic_te, tr=c(30, 30),
-                               ot='Byte')
+                               ot='Byte', co="COMPRESS=LZW")
 
         image_stack <- gdalwarp(masked_epoch_image_files,
                                 dstfile=mosaic_out_file,
@@ -158,7 +158,7 @@ for (sitecode in sitecodes) {
                                 overwrite=overwrite, multi=TRUE, 
                                 wo=paste0("NUM_THREADS=", n_cpus), 
                                 te=mosaic_te, tr=c(30, 30),
-                                ot='Int16')
+                                ot='Int16', co="COMPRESS=LZW")
     }
 
     # Check extents of all mosaics are equal
