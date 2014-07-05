@@ -46,6 +46,9 @@ for (sitecode in sitecodes) {
 }
 stopifnot(length(classes_file_1s) == length(classes_file_2s))
 
+classes_file_1s <- classes_files_1s[1]
+classes_file_2s <- classes_files_2s[1]
+
 # Run change detection on each pair
 notify(paste0('Starting change detection. ',
               length(classes_file_1s), ' images to process.'))
@@ -120,13 +123,15 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
    
     chg_threshold <- threshold(chg_mag_image, by=.025)
     
-    chg_traj_filename <- file.path(image_basedir,
-                                   paste(out_basename, 'chgtraj.tif', sep='_'))
     chg_traj_out <- chg_traj(t1_classes, chg_mag_image, chg_dir_image, 
                              chg_threshold=chg_threshold,
-                             filename=chg_traj_filename,
-                             classnames=classnames,
-                             overwrite=overwrite)
+                             classnames=classnames)
+    
+    chg_traj_filename <- file.path(image_basedir,
+                                   paste(out_basename, 'chgtraj.tif', sep='_'))
+    chg_traj_image <- chg_traj_out$traj * image_mask
+    writeRaster(chg_traj_image, filename=chg_traj_filename, 
+                overwrite=overwrite, datatype='INT2S')
 
     chg_traj_lut_filename <- file.path(image_basedir,
                                        paste(out_basename, 'chgtraj_lut.csv', 
