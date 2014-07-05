@@ -142,13 +142,16 @@ for (sitecode in sitecodes) {
         mosaic_te[4] <- round(mosaic_te[4] + tr[2] - mosaic_te[4] %% tr[2])
         stopifnot(all(round(mosaic_te / 30) == (mosaic_te / 30)))
 
-        mask_stack <- gdalwarp(epoch_mask_files,
-                               dstfile=mask_out_file,
-                               r='near', output_Raster=TRUE, 
-                               of='GTiff', dstnodata="None",
+        mask_vrtfile <- tempfile(fileext='.vrt')
+        # The hidenodata and vrtnodata lines below ensure that no data areas 
+        # are coded 255 in the output mosaic (consistent with the Landsat CDR 
+        # mask coding for fill area).
+        gdalbuildvrt(epoch_mask_files, mask_vrtfile, vrtnodata=255, 
+                     hidenodata=FALSE, te=mosaic_te, tr=c(30, 30))
+        mask_stack <- gdalwarp(mask_vrtfile, dstfile=mask_out_file, 
+                               r='near', output_Raster=TRUE, of='GTiff', 
                                overwrite=overwrite, multi=TRUE, 
                                wo=paste0("NUM_THREADS=", n_cpus), 
-                               te=mosaic_te, tr=c(30, 30),
                                ot='Byte', co="COMPRESS=LZW")
 
         image_stack <- gdalwarp(masked_epoch_image_files,
