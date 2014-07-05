@@ -18,121 +18,130 @@ sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
+classes_file_1s <- c()
+classes_file_2s <- c()
 for (sitecode in sitecodes) {
     rasterOptions(tmpdir=paste0(tempdir(), '_raster'))
 
     message(paste0('Processing ', sitecode, '...'))
 
-    mask_files <- dir(image_basedir,
-                      pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors_masks.tif$'),
-                      full.names=TRUE)
-    classes_files <- dir(image_basedir,
+    these_classes_files <- dir(image_basedir,
                          pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors_predclasses.tif$'),
                          full.names=TRUE)
-    probs_files <- dir(image_basedir,
-                       pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors_predprobs.tif$'),
-                       full.names=TRUE)
-    key_files <- dir(image_basedir,
-                     pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors_classeskey.csv$'),
-                     full.names=TRUE)
-    if (length(classes_files) == 0) {
+
+    if (length(these_classes_files) == 0) {
         next
     }
-    if (length(classes_files) == 1) {
+    if (length(these_classes_files) == 1) {
         message(paste("cannot process", sitecode, "- only 1 classes file found"))
         next
     }
 
-    classes_files_years <- gsub('_', '', str_extract(classes_files, 
-                                                        '_[0-9]{4}_'))
-    probs_files_years <- gsub('_', '', str_extract(probs_files, 
-                                                      '_[0-9]{4}_'))
-    key_files_years <- gsub('_', '', str_extract(key_files, '_[0-9]{4}_'))
-    stopifnot(classes_files_years == probs_files_years)
-    stopifnot(classes_files_years == key_files_years)
-    file_years <- year(as.Date(key_files_years, '%Y'))
+    # Setup pairs of image files
+    these_classes_file_1s <- these_classes_files[1:(length(these_classes_files) - 1)]
+    these_classes_file_2s <- these_classes_files[2:length(these_classes_files)]
 
-    # Check that all the key files are identical:
+    classes_file_1s <- c(classes_file_1s, these_classes_file_1s)
+    classes_file_2s <- c(classes_file_2s, these_classes_file_2s)
+}
+stopifnot(length(classes_file_1s) == length(classes_file_2s))
+
+classes_file_1s <- classes_file_1s[1]
+classes_file_2s <- classes_file_2s[2]
+
+# Run change detection on each pair
+notify(paste0('Starting change detection. ',
+              length(classes_file_1s), ' images to process.'))
+num_res <- foreach (classes_file_1=iter(classes_file_1s), 
+                    classes_file_2=iter(classes_file_2s), 
+                    .packages=c('teamlucc', 'notifyR', 'stringr'),
+                    .combine=c, .inorder=FALSE) %dopar% {
+    raster_tmpdir <- paste0(tempdir(), '_raster_',
+                            paste(sample(c(letters, 0:9), 15), collapse=''))
+    dir.create(raster_tmpdir)
+    rasterOptions(tmpdir=raster_tmpdir)
+
+    sitecode <- str_extract(basename(classes_file_1), '^[a-zA-Z]*')
+
+    year_1 <- as.numeric(gsub('_','', str_extract(classes_file_1,
+                                                  '_[0-9]{4}_')))
+    year_2 <- as.numeric(gsub('_','', str_extract(classes_file_2,
+                                                  '_[0-9]{4}_')))
+    stopifnot(year_1 < year_2)
+
+    out_basename <- paste0(sitecode, '_', year_1, '-', year_2, 
+                           '_chgdetect')
+
+    output_files <- dir(image_basedir,
+                        pattern=paste0('_chgtraj.tif$'),
+                        full.names=TRUE)
+    if (length(output_files) >= 1 & !redo_chg_detection) {
+        return()
+    }
+
+    mask_file_1 <- gsub('predclasses', 'masks', classes_file_1)
+    mask_file_2 <- gsub('predclasses', 'masks', classes_file_2)
+    probs_file_1 <- gsub('predclasses', 'predprobs', classes_file_1)
+    probs_file_2 <- gsub('predclasses', 'predprobs', classes_file_2)
+
+    key_file_1 <- gsub('predclasses', 'classeskey', classes_file_1)
+    key_file_2 <- gsub('predclasses', 'classeskey', classes_file_2)
     code_keys <- lapply(key_files, read.csv)
     stopifnot(all(unlist(lapply(code_keys, identical, code_keys[[1]]))))
     class_key <- read.csv(key_files[1])
     classnames <- class_key$class
 
-    # Setup pairs of image files
-    classes_file_1s <- classes_files[1:(length(classes_files) - 1)]
-    probs_file_1s <- probs_files[1:(length(probs_files) - 1)]
-    probs_file_2s <- probs_files[2:length(probs_files)]
-    year_1s <- file_years[1:(length(file_years) - 1)]
-    year_2s <- file_years[2:length(file_years)]
-    mask_file_1s <- mask_files[1:(length(mask_files) - 1)]
-    mask_file_2s <- mask_files[2:length(mask_files)]
+    # Make a mask of 1s and NAs, with clear areas marked with 1s. This needs to 
+    # take into account BOTH images.
+    mask_1 <- raster(mask_file_1, layer=2)
+    mask_2 <- raster(mask_file_2, layer=2)
+    image_mask <- overlay(mask_1, mask_2, fun=function(msk1, msk2) {
+        ret <- !is.na(msk1)
+        ret[(msk1 == 2) | (msk1 == 4) | (is.na(msk1)) | (msk1 == 255)] <- NA
+        ret[(msk2 == 2) | (msk2 == 4) | (is.na(msk2)) | (msk2 == 255)] <- NA
+        return(ret)
+    })
 
-    # Run change detection on each pair
-    ret <- foreach (classes_file_1=iter(classes_file_1s), 
-             probs_file_1=iter(probs_file_1s),
-             probs_file_2=iter(probs_file_2s), 
-             year_1=iter(year_1s), year_2=iter(year_2s), 
-             mask_file_1=iter(mask_file_1s),
-             mask_file_2=iter(mask_file_2s), 
-             .packages=c('teamlucc')) %dopar% {
-        out_basename <- paste0(sitecode, '_', year_1, '-', year_2, 
-                               '_chgdetect')
+    t1_classes <- stack(classes_file_1)
+    t1_probs <- stack(probs_file_1)
+    t2_probs <- stack(probs_file_2)
 
-        output_files <- dir(image_basedir,
-                            pattern=paste0('_chgtraj.tif$'),
-                            full.names=TRUE)
-        if (length(output_files) >= 1 & !redo_chg_detection) {
-            return()
-        }
+    chg_dir_filename <- file.path(image_basedir,
+                                  paste(out_basename, 'chgdir.tif', 
+                                        sep='_'))
+    chg_dir_image <- chg_dir(t1_probs, t2_probs)
+    chg_dir_image <- chg_dir_image * image_mask
+    writeRaster(chg_dir_image, filename=chg_dir_filename, 
+                overwrite=overwrite, datatype=dataType(chg_dir_image))
 
-        # Make a mask of 1s and NAs, with clear areas marked with 1s. This 
-        # needs to take into account BOTH images.
-        mask_1 <- raster(mask_file_1, layer=2)
-        mask_2 <- raster(mask_file_2, layer=2)
-        image_mask <- overlay(mask_1, mask_2, fun=function(msk1, msk2) {
-            ret <- !is.na(msk1)
-            ret[(msk1 == 2) | (msk1 == 4) | (is.na(msk1)) | (msk1 == 255)] <- NA
-            ret[(msk2 == 2) | (msk2 == 4) | (is.na(msk2)) | (msk2 == 255)] <- NA
-            return(ret)
-        })
+    chg_mag_filename <- file.path(image_basedir,
+                                  paste(out_basename, 'chgmag.tif', 
+                                        sep='_'))
+    chg_mag_image <- chg_mag(t1_probs, t2_probs)
+    chg_mag_image <- chg_mag_image * image_mask
+    writeRaster(chg_mag_image, filename=chg_mag_filename, 
+                overwrite=overwrite, datatype=dataType(chg_mag_image))
+   
+    chg_threshold <- threshold(chg_mag_image, by=.025)
+    
+    chg_traj_filename <- file.path(image_basedir,
+                                   paste(out_basename, 'chgtraj.tif', sep='_'))
+    chg_traj_out <- chg_traj(t1_classes, chg_mag_image, chg_dir_image, 
+                             chg_threshold=chg_threshold,
+                             filename=chg_traj_filename,
+                             classnames=classnames,
+                             overwrite=overwrite)
 
-        t1_classes <- stack(classes_file_1)
-        t1_probs <- stack(probs_file_1)
-        t2_probs <- stack(probs_file_2)
-
-        chg_dir_filename <- file.path(image_basedir,
-                                      paste(out_basename, 'chgdir.tif', 
-                                            sep='_'))
-        chg_dir_image <- chg_dir(t1_probs, t2_probs)
-        chg_dir_image <- chg_dir_image * image_mask
-        writeRaster(chg_dir_image, filename=chg_dir_filename, 
-                    overwrite=overwrite, datatype=dataType(chg_dir_image))
-
-        chg_mag_filename <- file.path(image_basedir,
-                                      paste(out_basename, 'chgmag.tif', 
-                                            sep='_'))
-        chg_mag_image <- chg_mag(t1_probs, t2_probs)
-        chg_mag_image <- chg_mag_image * image_mask
-        writeRaster(chg_mag_image, filename=chg_mag_filename, 
-                    overwrite=overwrite, datatype=dataType(chg_mag_image))
-       
-        chg_threshold <- threshold(chg_mag_image, by=.025)
-        
-        chg_traj_filename <- file.path(image_basedir,
-                                       paste(out_basename, 'chgtraj.tif', sep='_'))
-        chg_traj_out <- chg_traj(t1_classes, chg_mag_image, chg_dir_image, 
-                                 chg_threshold=chg_threshold,
-                                 filename=chg_traj_filename,
-                                 classnames=classnames,
-                                 overwrite=overwrite)
-
-        chg_traj_lut_filename <- file.path(image_basedir,
-                                           paste(out_basename, 'chgtraj_lut.csv', 
-                                                 sep='_'))
-        write.csv(chg_traj_out$lut, file=chg_traj_lut_filename, row.names=FALSE)
-    }
+    chg_traj_lut_filename <- file.path(image_basedir,
+                                       paste(out_basename, 'chgtraj_lut.csv', 
+                                             sep='_'))
+    write.csv(chg_traj_out$lut, file=chg_traj_lut_filename, row.names=FALSE)
 
     removeTmpFiles(h=0)
+    unlink(raster_tmpdir)
+
+    return(1)
 }
 
-notify('Finished change detection')
+if (length(num_res) == 0) num_res <- 0
+notify(paste0('Finished change detection. Processed ', sum(num_res), ' images.'))

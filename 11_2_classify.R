@@ -50,7 +50,8 @@ for (sitecode in sitecodes) {
 
 stopifnot(length(image_files) == length(model_files))
 
-notify(paste0('Starting classification. ', length(image_files), ' images to process.'))
+notify(paste0('Starting classification. ',
+              length(image_files), ' images to process.'))
 num_res <- foreach (image_file=iter(image_files),
                     model_file=iter(model_files),
                     .packages=c('teamlucc', 'tools', 'stringr', 'notifyR'),
