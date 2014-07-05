@@ -52,7 +52,7 @@ stopifnot(length(image_files) == length(model_files))
 notify(paste0('Starting classification. ', length(image_files), ' images to process.'))
 num_res <- foreach (image_file=iter(image_files),
                     model_file=iter(model_files),
-                    .packages=c('teamlucc', 'tools', 'stringr'),
+                    .packages=c('teamlucc', 'tools', 'stringr', 'notifyR'),
                     .inorder=FALSE) %dopar% {
     raster_tmpdir <- paste0(tempdir(), '_raster_',
                             paste(sample(c(letters, 0:9), 15), collapse=''))
@@ -100,7 +100,6 @@ num_res <- foreach (image_file=iter(image_files),
     removeTmpFiles(h=0)
     unlink(raster_tmpdir)
 
-    library(notifyR)
     notify(paste0('Finished classifying ', image_file))
     return(1)
 }
