@@ -105,4 +105,5 @@ num_res <- foreach (image_file=iter(image_files),
     return(1)
 }
 
+if (length(num_res) == 0) num_res <- 0
 notify(paste0('Classification finished. Classified ', sum(num_res), ' images.'))
