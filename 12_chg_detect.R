@@ -46,9 +46,6 @@ for (sitecode in sitecodes) {
 }
 stopifnot(length(classes_file_1s) == length(classes_file_2s))
 
-classes_file_1s <- classes_file_1s[1]
-classes_file_2s <- classes_file_2s[2]
-
 # Run change detection on each pair
 notify(paste0('Starting change detection. ',
               length(classes_file_1s), ' images to process.'))
