@@ -4,14 +4,14 @@ library(foreach)
 library(iterators)
 library(doParallel)
 
-registerDoParallel(4)
+registerDoParallel(n_cpus)
 
 library(rgdal)
 library(stringr)
 library(lubridate)
 library(tools)
 
-redo_classify <- TRUE
+redo_classify <- FALSE
 overwrite <- TRUE
 
 predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi', 
@@ -28,9 +28,10 @@ for (sitecode in sitecodes) {
     these_image_files <- dir(image_basedir,
                        pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors.tif$'))
 
-    output_files <- paste0(file_path_sans_ext(these_image_files), '_classified.tif')
+    output_files <- paste0(file_path_sans_ext(these_image_files),
+                           '_predclasses', extension(image_file))
 
-    if (length(these_image_files) >= 1 & !overwrite) {
+    if (length(these_image_files) >= 1 & !redo_classify) {
         these_image_files <- these_image_files[!file_test('-f', output_files)]
     }
 
