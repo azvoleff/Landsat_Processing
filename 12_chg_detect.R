@@ -84,11 +84,10 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
     probs_file_1 <- gsub('predclasses', 'predprobs', classes_file_1)
     probs_file_2 <- gsub('predclasses', 'predprobs', classes_file_2)
 
-    key_file_1 <- gsub('predclasses', 'classeskey', classes_file_1)
-    key_file_2 <- gsub('predclasses', 'classeskey', classes_file_2)
-    code_keys <- lapply(key_files, read.csv)
-    stopifnot(all(unlist(lapply(code_keys, identical, code_keys[[1]]))))
-    class_key <- read.csv(key_files[1])
+    key_file_1 <- gsub('predclasses.tif', 'classeskey.csv', classes_file_1)
+    key_file_2 <- gsub('predclasses.tif', 'classeskey.csv', classes_file_2)
+    stopifnot(read.csv(key_file_1) == read.csv(key_file_2))
+    class_key <- read.csv(key_file_1)
     classnames <- class_key$class
 
     # Make a mask of 1s and NAs, with clear areas marked with 1s. This needs to 
