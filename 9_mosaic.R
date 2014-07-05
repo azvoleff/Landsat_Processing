@@ -77,7 +77,8 @@ for (sitecode in sitecodes) {
     # Now perform mosaicking
     mosaic_stacks <- foreach(image_date_string=iter(image_date_strings),
                              .packages=c('raster', 'rgdal', 'lubridate', 
-                                         'tools', 'foreach', 'iterators'),
+                                         'tools', 'foreach', 'iterators',
+                                         'gdalUtils'),
                              .combine=c) %dopar% {
         image_date_object <- as.Date(image_date_string, '_%Y-%j_')
 
@@ -144,11 +145,11 @@ for (sitecode in sitecodes) {
         mask_stack <- gdalwarp(epoch_mask_files,
                                dstfile=mask_out_file,
                                r='near', output_Raster=TRUE, 
-                               of='GTiff',
+                               of='GTiff', dstnodata="None",
                                overwrite=overwrite, multi=TRUE, 
                                wo=paste0("NUM_THREADS=", n_cpus), 
                                te=mosaic_te, tr=c(30, 30),
-                               ot='Int16')
+                               ot='Byte')
 
         image_stack <- gdalwarp(masked_epoch_image_files,
                                 dstfile=mosaic_out_file,
@@ -192,26 +193,6 @@ for (sitecode in sitecodes) {
 
         dem_list <- dem_extents[intersecting, ]$filename
         dem_rasts <- lapply(dem_list, raster)
-
-        # if (length(dem_list) > 1) {
-        #     # Verify projections of DEMs match
-        #     dem_prj <- projection(dem_rasts[[1]])
-        #     if (any(lapply(dem_rasts, projection) != dem_prj)) {
-        #         stop("each DEM in dem_list must have the same projection")
-        #     }
-        #     ######################################################################
-        #     # Mosaic DEMs
-        #     mosaic_file <- extension(rasterTmpFile(), '.tif')
-        #     # Calculate minimum bounding box coordinates:
-        #     mosaic_te <- as.numeric(bbox(mos_ext))
-        #     # Use mosaic_rasters from gdalUtils for speed:
-        #     mosaic_rasters(dem_list, mosaic_file, te=mosaic_te, of=of, 
-        #                    overwrite=overwrite)
-        #     dem_mosaic <- raster(mosaic_file)
-        # } else {
-        #     dem_mosaic <- dem_rasts[[1]]
-        #     mosaic_file <- filename(dem_mosaic)
-        # }
 
         to_srs <- proj4string(mosaic_stacks[[1]])
 
