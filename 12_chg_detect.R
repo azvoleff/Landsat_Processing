@@ -21,10 +21,6 @@ image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 classes_file_1s <- c()
 classes_file_2s <- c()
 for (sitecode in sitecodes) {
-    rasterOptions(tmpdir=paste0(tempdir(), '_raster'))
-
-    message(paste0('Processing ', sitecode, '...'))
-
     these_classes_files <- dir(image_basedir,
                          pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors_predclasses.tif$'),
                          full.names=TRUE)
@@ -45,9 +41,6 @@ for (sitecode in sitecodes) {
     classes_file_2s <- c(classes_file_2s, these_classes_file_2s)
 }
 stopifnot(length(classes_file_1s) == length(classes_file_2s))
-
-classes_file_1s <- classes_files_1s[1]
-classes_file_2s <- classes_files_2s[1]
 
 # Run change detection on each pair
 notify(paste0('Starting change detection. ',
