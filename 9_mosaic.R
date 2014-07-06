@@ -246,6 +246,7 @@ for (sitecode in sitecodes) {
         '
         mosaic_block <- cxxfunction(signature(img="numeric", msk="numeric"),
                                      body=src, plugin="RcppArmadillo")
+
 #         results <- mosaic_block(image_array, mask_array)
 #         plot(raster(matrix(results$img[, 1], nrow=bs$nrows[block_num], 
 #                            byrow=TRUE)))
@@ -353,7 +354,7 @@ for (sitecode in sitecodes) {
 #                                 wo=paste0("NUM_THREADS=", n_cpus), 
 #                                 te=mosaic_te, tr=c(30, 30),
 #                                 ot='Int16', co="COMPRESS=LZW")
-#     }
+    }
 
     # Check extents of all mosaics are equal
     if (imgtype == 'normalized') {
@@ -416,6 +417,7 @@ for (sitecode in sitecodes) {
         slopeaspect <- writeRaster(slopeaspect, filename=slopeaspect_mosaic_filename, 
                                  overwrite=overwrite, datatype='INT2S')
     }
+
     removeTmpFiles(h=0)
     unlink(raster_tmpdir)
 }
