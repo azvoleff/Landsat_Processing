@@ -296,12 +296,9 @@ for (sitecode in sitecodes) {
                                  dim=c(mask_dims[1] * mask_dims[2], mask_dims[3]))
                 if (image_num == 1) {
                     image_array <- image_bl
-                } else {
-                    image_array <- abind(image_array, image_bl, along=3)
-                }
-                if (image_num == 1) {
                     mask_array <- mask_bl
                 } else {
+                    image_array <- abind(image_array, image_bl, along=3)
                     mask_array <- abind(mask_array, mask_bl, along=3)
                 }
             }
