@@ -33,8 +33,8 @@ sitecodes <- "BCI"
 
 notify('Starting mosaicking.')
 for (sitecode in sitecodes) {
-    raster_tmpdir <- paste0(temp, '_raster_',
-                            paste(sample(c(letters, 0:9), 15), collapse=''))
+    raster_tmpdir <- file.path(temp, paste0('raster_',
+                            paste(sample(c(letters, 0:9), 15), collapse='')))
     dir.create(raster_tmpdir)
     rasterOptions(tmpdir=raster_tmpdir)
 
@@ -102,8 +102,14 @@ for (sitecode in sitecodes) {
     mosaic_stacks <- foreach(image_date_string=iter(image_date_strings),
                              .packages=c('raster', 'rgdal', 'lubridate', 
                                          'tools', 'foreach', 'iterators',
-                                         'gdalUtils'),
+                                         'gdalUtils', 'RcppArmadillo', 
+                                         'inline'),
                              .combine=c) %dopar% {
+        raster_tmpdir <- file.path(temp, paste0('raster_',
+                                   paste(sample(c(letters, 0:9), 15), collapse='')))
+        dir.create(raster_tmpdir)
+        rasterOptions(tmpdir=raster_tmpdir)
+
         image_date_object <- as.Date(image_date_string, '_%Y-%j_')
 
         epoch_image_files <- image_files[grepl(image_date_string, image_files)]
@@ -144,18 +150,18 @@ for (sitecode in sitecodes) {
             aligned_files <- foreach (epoch_image_file=iter(epoch_image_files),
                                       epoch_mask_file=iter(epoch_mask_files),
                                       .combine=rbind) %do% {
-                mask_vrtfile <- tempfile(fileext='.vrt')
+                mask_vrtfile <- extension(rasterTmpFile(), '.vrt')
                 # The hidenodata and vrtnodata lines below ensure that no data 
                 # areas are coded 255 in the output mosaic (consistent with the 
                 # Landsat CDR mask coding for fill area).
                 gdalbuildvrt(epoch_mask_file, mask_vrtfile, vrtnodata=255, 
                              hidenodata=FALSE, te=mosaic_te, tr=c(30, 30))
-                mask_tiffile <- tempfile(fileext='.tif')
+                mask_tiffile <- extension(rasterTmpFile(), '.tif')
                 gdalwarp(mask_vrtfile, dstfile=mask_tiffile, r='near', 
                          of='GTiff', overwrite=overwrite, ot='Byte', 
                          co="COMPRESS=LZW")
 
-                image_tiffile <- tempfile(fileext='.tif')
+                image_tiffile <- extension(rasterTmpFile(), '.tif')
                 gdalwarp(epoch_image_file, dstfile=image_tiffile, 
                          r='cubicspline', of='GTiff', overwrite=overwrite, 
                          te=mosaic_te, tr=c(30, 30), ot='Int16', 
@@ -351,6 +357,8 @@ for (sitecode in sitecodes) {
 #                                 wo=paste0("NUM_THREADS=", n_cpus), 
 #                                 te=mosaic_te, tr=c(30, 30),
 #                                 ot='Int16', co="COMPRESS=LZW")
+        removeTmpFiles(h=0)
+        unlink(raster_tmpdir)
     }
 
     # Check extents of all mosaics are equal

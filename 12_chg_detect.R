@@ -21,11 +21,6 @@ image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 classes_file_1s <- c()
 classes_file_2s <- c()
 for (sitecode in sitecodes) {
-    raster_tmpdir <- paste0(temp, '_raster_',
-                            paste(sample(c(letters, 0:9), 15), collapse=''))
-    dir.create(raster_tmpdir)
-    rasterOptions(tmpdir=raster_tmpdir)
-
     message(paste0('Processing ', sitecode, '...'))
 
     these_classes_files <- dir(image_basedir,
@@ -59,8 +54,8 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
                     classes_file_2=iter(classes_file_2s), 
                     .packages=c('teamlucc', 'notifyR', 'stringr'),
                     .combine=c, .inorder=FALSE) %dopar% {
-    raster_tmpdir <- paste0(tempdir(), '_raster_',
-                            paste(sample(c(letters, 0:9), 15), collapse=''))
+    raster_tmpdir <- file.path(temp, paste0('raster_',
+                               paste(sample(c(letters, 0:9), 15), collapse='')))
     dir.create(raster_tmpdir)
     rasterOptions(tmpdir=raster_tmpdir)
 
