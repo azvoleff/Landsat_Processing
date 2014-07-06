@@ -29,6 +29,8 @@ sitecodes <- sitecodes[sitecodes != 'BBS']
 
 stopifnot(imgtype %in% c('normalized', 'raw'))
 
+sitecode <- 'BCI'
+
 notify('Starting mosaicking.')
 for (sitecode in sitecodes) {
     raster_tmpdir <- file.path(temp, paste0('raster_',
@@ -164,10 +166,11 @@ for (sitecode in sitecodes) {
                          r='cubicspline', of='GTiff', overwrite=overwrite, 
                          te=mosaic_te, tr=c(30, 30), ot='Int16', 
                          co="COMPRESS=LZW")
-                return(c(mask_tiffile, image_tiffile))
+                return(data.frame(msk=mask_tiffile, img=image_tiffile, 
+                                  stringsAsFactors=FALSE))
             }
-            epoch_mask_files_aligned <- aligned_files[, 1]
-            epoch_image_files_aligned <- aligned_files[, 2]
+            epoch_mask_files_aligned <- aligned_files$msk
+            epoch_image_files_aligned <- aligned_files$img
         }
 
         #######################################################################
@@ -267,10 +270,18 @@ for (sitecode in sitecodes) {
 #         plot(raster(matrix(mask_array[, 1, 2], nrow=bs$nrows[block_num], 
 #                            byrow=TRUE)))
 
-        epoch_mask_stacks <- lapply(epoch_mask_files_aligned, stack)
-        epoch_image_stacks <- lapply(epoch_image_files_aligned, stack)
-        sample_mask <- epoch_mask_stacks[[1]]
-        sample_image <- epoch_image_stacks[[1]]
+        if (length(epoch_image_files_aligned) > 1) {
+            epoch_mask_stacks <- lapply(epoch_mask_files_aligned, stack)
+            epoch_image_stacks <- lapply(epoch_image_files_aligned, stack)
+            sample_mask <- epoch_mask_stacks[[1]]
+            sample_image <- epoch_image_stacks[[1]]
+        } else {
+            epoch_mask_stacks <- stack(epoch_mask_files_aligned)
+            epoch_image_stacks <- stack(epoch_image_files_aligned)
+            sample_mask <- epoch_mask_stacks
+            sample_image <- epoch_image_stacks
+        }
+
         mask_out <- brick(sample_mask, values=FALSE)
         mask_out <- writeStart(mask_out, filename=mask_out_file, 
                                overwrite=overwrite, datatype='INT1U', 
@@ -279,6 +290,7 @@ for (sitecode in sitecodes) {
         image_out <- writeStart(image_out, filename=mosaic_out_file, 
                                 overwrite=overwrite, datatype='INT2S')
         bs <- blockSize(sample_image)
+
         for (block_num in 1:bs$n) {
             image_dims <- c(bs$nrows[block_num], ncol(sample_image), 
                             nlayers(sample_image))
@@ -291,11 +303,11 @@ for (sitecode in sitecodes) {
                 image_bl <- array(getValuesBlock(epoch_image_stacks[[image_num]], 
                                                  row=bs$row[block_num], 
                                                  nrows=bs$nrows[block_num]),
-                                  dim=c(image_dims[1] * image_dims[2], image_dims[3]))
+                                  dim=c(image_dims[1] * image_dims[2], image_dims[3], 1))
                 mask_bl <- array(getValuesBlock(epoch_mask_stacks[[image_num]], 
                                                 row=bs$row[block_num], 
                                                 nrows=bs$nrows[block_num]),
-                                 dim=c(mask_dims[1] * mask_dims[2], mask_dims[3]))
+                                 dim=c(mask_dims[1] * mask_dims[2], mask_dims[3], 1))
                 if (image_num == 1) {
                     image_array <- image_bl
                     mask_array <- mask_bl
