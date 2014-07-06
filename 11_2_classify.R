@@ -56,7 +56,7 @@ num_res <- foreach (image_file=iter(image_files),
                     model_file=iter(model_files),
                     .packages=c('teamlucc', 'tools', 'stringr', 'notifyR'),
                     .inorder=FALSE) %dopar% {
-    raster_tmpdir <- paste0(tempdir(), '_raster_',
+    raster_tmpdir <- paste0(temp, '_raster_',
                             paste(sample(c(letters, 0:9), 15), collapse=''))
     dir.create(raster_tmpdir)
     rasterOptions(tmpdir=raster_tmpdir)

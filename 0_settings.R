@@ -18,11 +18,10 @@ prefixes <- c('D:/azvoleff/Data', # CI-TEAM
               '/localdisk/home/azvoleff/Data') # vertica1
 prefix <- prefixes[match(TRUE, unlist(lapply(prefixes, function(x) file_test('-d', x))))]
 
-temps <- c('D:/Temp', # CI-TEAM
-           'H:/Temp', # Buffalo drive
-           'O:/Temp', # Blue drive HP
-           'R:/Temp', # Blue drive ThinkPad
-           '/localdisk/home/azvoleff/Temp') # vertica1
+temps <- c('H:/Temp', # Buffalo drive
+           'O:/Temp', # Blue drive (HP or thinkpad)
+           '/localdisk/home/azvoleff/Temp', # vertica1
+           'D:/Temp') # CI-TEAM
 temp <- temps[match(TRUE, unlist(lapply(temps, function(x) file_test('-d', x))))]
 rasterOptions(tmpdir=temp)
 

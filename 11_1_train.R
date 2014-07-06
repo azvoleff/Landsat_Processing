@@ -27,7 +27,7 @@ tr_polys_dir <- file.path(prefix, 'Landsat', 'LCLUC_Training')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 notify('Starting training.')
 for (sitecode in sitecodes) {
-    raster_tmpdir <- paste0(tempdir(), '_raster_',
+    raster_tmpdir <- paste0(temp, '_raster_',
                             paste(sample(c(letters, 0:9), 15), collapse=''))
     dir.create(raster_tmpdir)
     rasterOptions(tmpdir=raster_tmpdir)
