@@ -29,8 +29,6 @@ sitecodes <- sitecodes[sitecodes != 'BBS']
 
 stopifnot(imgtype %in% c('normalized', 'raw'))
 
-sitecodes <- "BCI"
-
 notify('Starting mosaicking.')
 for (sitecode in sitecodes) {
     raster_tmpdir <- file.path(temp, paste0('raster_',
@@ -103,7 +101,7 @@ for (sitecode in sitecodes) {
                              .packages=c('raster', 'rgdal', 'lubridate', 
                                          'tools', 'foreach', 'iterators',
                                          'gdalUtils', 'RcppArmadillo', 
-                                         'inline'),
+                                         'inline', 'abind'),
                              .combine=c) %dopar% {
         raster_tmpdir <- file.path(temp, paste0('raster_',
                                    paste(sample(c(letters, 0:9), 15), collapse='')))

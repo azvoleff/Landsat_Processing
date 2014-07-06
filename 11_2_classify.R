@@ -11,7 +11,7 @@ library(stringr)
 library(lubridate)
 library(tools)
 
-redo_classify <- FALSE
+redo_classify <- TRUE
 overwrite <- TRUE
 
 predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi', 
