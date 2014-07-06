@@ -57,11 +57,20 @@ for (sitecode in sitecodes) {
 stopifnot(length(image_files) == length(dem_files))
 stopifnot(length(image_files) == length(slopeaspect_files))
 
+notify(paste0('Calculating predictors. ',
+              length(image_files), ' images to process.'))
 foreach (image_file=iter(image_files), dem_file=iter(dem_files),
          slopeaspect_file=iter(slopeaspect_files),
          .packages=c('teamlucc', 'stringr')) %dopar% {
+    raster_tmpdir <- paste0(tempdir(), '_raster_',
+                            paste(sample(c(letters, 0:9), 15), collapse=''))
+    dir.create(raster_tmpdir)
+    rasterOptions(tmpdir=raster_tmpdir)
     dem <- raster(dem_file)
     slopeaspect <- stack(slopeaspect_file)
     auto_calc_predictors(image_file, dem, slopeaspect, output_path=NULL, 
                          cleartmp=TRUE, overwrite=overwrite)
+    removeTmpFiles(h=0)
+    unlink(raster_tmpdir)
 }
+notify('Finished calculating predictors.')

@@ -11,8 +11,8 @@ library(stringr)
 library(lubridate)
 library(tools)
 
-redo_extract <- FALSE
-redo_training <- FALSE
+redo_extract <- TRUE
+redo_training <- TRUE
 overwrite <- TRUE
 
 predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi', 
@@ -25,8 +25,12 @@ sitecodes <- sitecodes[!(sitecodes %in% c('NAK', 'UDZ'))]
 
 tr_polys_dir <- file.path(prefix, 'Landsat', 'LCLUC_Training')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
+notify('Starting training.')
 for (sitecode in sitecodes) {
-    rasterOptions(tmpdir=paste0(tempdir(), '_raster'))
+    raster_tmpdir <- paste0(tempdir(), '_raster_',
+                            paste(sample(c(letters, 0:9), 15), collapse=''))
+    dir.create(raster_tmpdir)
+    rasterOptions(tmpdir=raster_tmpdir)
     message(paste0('Processing ', sitecode, '...'))
 
     image_files <- dir(image_basedir,
@@ -114,6 +118,7 @@ for (sitecode in sitecodes) {
     }
 
     removeTmpFiles(h=0)
+    unlink(raster_tmpdir)
 }
 
 notify('Training finished.')
