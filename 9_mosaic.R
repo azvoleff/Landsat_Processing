@@ -152,14 +152,12 @@ for (sitecode in sitecodes) {
                              hidenodata=FALSE, te=mosaic_te, tr=c(30, 30))
                 mask_tiffile <- tempfile(fileext='.tif')
                 gdalwarp(mask_vrtfile, dstfile=mask_tiffile, r='near', 
-                         of='GTiff', overwrite=overwrite, multi=TRUE, 
-                         wo=paste0("NUM_THREADS=", n_cpus), ot='Byte', 
+                         of='GTiff', overwrite=overwrite, ot='Byte', 
                          co="COMPRESS=LZW")
 
                 image_tiffile <- tempfile(fileext='.tif')
                 gdalwarp(epoch_image_file, dstfile=image_tiffile, 
                          r='cubicspline', of='GTiff', overwrite=overwrite, 
-                         multi=TRUE, wo=paste0("NUM_THREADS=", n_cpus), 
                          te=mosaic_te, tr=c(30, 30), ot='Int16', 
                          co="COMPRESS=LZW")
                 return(c(mask_tiffile, image_tiffile))
@@ -278,7 +276,6 @@ for (sitecode in sitecodes) {
                                 overwrite=overwrite, datatype='INT2S')
         bs <- blockSize(sample_image)
         for (block_num in 1:bs$n) {
-            message(block_num)
             image_dims <- c(bs$nrows[block_num], ncol(sample_image), 
                             nlayers(sample_image))
             mask_dims <- c(bs$nrows[block_num], ncol(sample_mask), 
