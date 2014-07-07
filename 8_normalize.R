@@ -16,7 +16,8 @@ overwrite <- TRUE
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
-sitecodes <- sitecodes[!(sitecodes %in% c('BBS'))]
+
+input_dir <- file.path(prefix, 'Landsat', 'Cloud_Filled')
 
 # Function to auto-normalize an image list, or, if there is only one image in 
 # the image list, to copy the image with the base image extension.
@@ -47,9 +48,8 @@ auto_normalize_or_copy <- function(image_files) {
 for (sitecode in sitecodes) {
     message(paste0('Normalizing images for ', sitecode, '...'))
 
-    base_dir <- file.path(prefix, 'Landsat', sitecode)
-    image_files <- dir(base_dir, 
-                       pattern='^[a-zA-Z]*_[0-9]{3}-[0-9]{3}_[0-9]{4}-[0-9]{3}_cf.tif$', 
+    image_files <- dir(input_dir, 
+                       pattern=paste0('^', sitecode, '_[0-9]{3}-[0-9]{3}_[0-9]{4}-[0-9]{3}_cf.tif$'),
                        full.names=TRUE)
     image_stacks <- lapply(image_files, stack)
 
@@ -97,7 +97,7 @@ for (sitecode in sitecodes) {
 
         # Determine the base image for lg_pathrow (it was automatically selected by 
         # auto_normalize)
-        lg_base_file <- dir(base_dir, pattern=paste0('^[a-zA-Z]*_', lg_pathrow, 
+        lg_base_file <- dir(base_dir, pattern=paste0('^', sitecode, '_', lg_pathrow, 
                                                      '_[0-9]{4}-[0-9]{3}_cf_normbase.tif$'),
                             full.names=TRUE)
         lg_mask_file <- paste0(file_path_sans_ext(lg_base_file), '_masks', 
@@ -112,7 +112,7 @@ for (sitecode in sitecodes) {
         foreach(wrspathrow=iter(remaining_wrspathrows),
                 .packages=c('stringr', 'teamlucc', 'lmodel2')) %do% {
             these_image_files <- dir(base_dir,
-                                     pattern=paste0('^[a-zA-Z]*_', wrspathrow, 
+                                     pattern=paste0('^', sitecode, '_', wrspathrow, 
                                                     '_[0-9]{4}-[0-9]{3}_cf.tif$'), 
                                      full.names=TRUE)
 

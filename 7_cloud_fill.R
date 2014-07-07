@@ -50,6 +50,8 @@ sensors_bydate <- list(c('L4T', 'L5T', 'L7E', 'L8E'),
 stopifnot(length(start_dates) == length(end_dates))
 stopifnot(length(start_dates) == length(sensors_bydate))
 
+output_dir <- file.path(prefix, 'Landsat', 'Cloud_Filled')
+
 sitecodes_rep <- c()
 base_dirs <- c()
 wrspaths <- c()
@@ -94,7 +96,7 @@ foreach (sitecode=iter(sitecodes_rep), base_dir=iter(base_dirs),
              .packages=c('teamlucc', 'raster', 'sp'),
              .inorder=FALSE) %dopar% {
         mid_date <- (end_date - start_date)/2 + start_date
-        out_base <- file.path(base_dir,
+        out_base <- file.path(output_dir,
                               paste0(sitecode,
                                      sprintf('_%03i-%03i_', wrspath, wrsrow),
                                      format(mid_date, '%Y-%j'), '_cf'))

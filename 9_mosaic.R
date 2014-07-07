@@ -25,16 +25,16 @@ imgtype <- 'raw'
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
-sitecodes <- sitecodes[sitecodes != c('UDZ')]
+sitecodes <- sitecodes[!(sitecodes %in% c('UDZ'))]
+sitecodes <- sitecodes[9:length(sitecodes)]
 
 stopifnot(imgtype %in% c('normalized', 'raw'))
 
-input_basedir <- file.path(prefix, 'Landsat')
+input_dir <- file.path(prefix, 'Landsat', 'Cloud_Filled')
 output_dir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 
 notify('Starting mosaicking.')
 for (sitecode in sitecodes) {
-    input_dir <- file.path(input_basedir, sitecode)
     raster_tmpdir <- file.path(temp, paste0('raster_',
                             paste(sample(c(letters, 0:9), 15), collapse='')))
     dir.create(raster_tmpdir)
@@ -43,9 +43,9 @@ for (sitecode in sitecodes) {
     message(paste0('Mosaicking images for ', sitecode, '...'))
 
     if (imgtype == 'normalized') {
-        pattern='^[a-zA-Z]*_[0-9]{3}-[0-9]{3}_[0-9]{4}-[0-9]{3}_cf(_((normbase)|(normalized))).tif$'
+        pattern=paste0('^', sitecode, '_[0-9]{3}-[0-9]{3}_[0-9]{4}-[0-9]{3}_cf(_((normbase)|(normalized))).tif$')
     } else {
-        pattern='^[a-zA-Z]*_[0-9]{3}-[0-9]{3}_[0-9]{4}-[0-9]{3}_cf.tif$'
+        pattern=paste0('^', sitecode, '_[0-9]{3}-[0-9]{3}_[0-9]{4}-[0-9]{3}_cf.tif$')
     }
     image_files <- dir(input_dir, pattern=pattern, full.names=TRUE)
     image_stacks <- lapply(image_files, stack)
@@ -390,9 +390,9 @@ for (sitecode in sitecodes) {
 
     # Check extents of all mosaics are equal
     if (imgtype == 'normalized') {
-        pattern <- '^[a-zA-Z]*_mosaic_normalized_[0-9]{4}.tif$'
+        pattern <- paste0('^', sitecode, '_mosaic_normalized_[0-9]{4}.tif$')
     } else {
-        pattern <- '^[a-zA-Z]*_mosaic_[0-9]{4}.tif$'
+        pattern <- paste0('^', sitecode, '_mosaic_[0-9]{4}.tif$')
     }
     mosaic_files <- dir(output_dir, pattern=pattern, full.names=TRUE)
     mosaic_stacks <- lapply(mosaic_files, stack)
