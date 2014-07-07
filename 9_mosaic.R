@@ -26,9 +26,10 @@ sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
 sitecodes <- sitecodes[sitecodes != 'BBS']
-sitecodes <- c('VB', 'YAN', 'YAS')
 
 stopifnot(imgtype %in% c('normalized', 'raw'))
+
+sitecode <- c("BCI")
 
 notify('Starting mosaicking.')
 for (sitecode in sitecodes) {
@@ -195,8 +196,18 @@ for (sitecode in sitecodes) {
             mat fillnofill_mat = msk_cube.tube(0, 0, msk_cube.n_rows - 1, 0);
             mat fmask_mat = msk_cube.tube(0, 1, msk_cube.n_rows - 1, 1);
 
-            //Rcpp::Rcout << sum(fillnofill_mat == 255) << std::endl;
-            //Rcpp::Rcout << sum(fmask_mat == 255) << std::endl;
+            //Rcpp::Rcout << "fillnofill 0" << sum(fillnofill_mat == 0) << std::endl;
+            //Rcpp::Rcout << "fillnofill 1" << sum(fillnofill_mat == 1) << std::endl;
+            //Rcpp::Rcout << "fillnofill 2" << sum(fillnofill_mat == 2) << std::endl;
+            //Rcpp::Rcout << "fillnofill 3" << sum(fillnofill_mat == 3) << std::endl;
+            //Rcpp::Rcout << "fillnofill 4" << sum(fillnofill_mat == 4) << std::endl;
+            //Rcpp::Rcout << "fillnofill 255" << sum(fillnofill_mat == 255) << std::endl;
+            //Rcpp::Rcout << "fmask 0" << sum(fmask_mat == 0) << std::endl;
+            //Rcpp::Rcout << "fmask 1" << sum(fmask_mat == 1) << std::endl;
+            //Rcpp::Rcout << "fmask 2" << sum(fmask_mat == 2) << std::endl;
+            //Rcpp::Rcout << "fmask 3" << sum(fmask_mat == 3) << std::endl;
+            //Rcpp::Rcout << "fmask 4" << sum(fmask_mat == 4) << std::endl;
+            //Rcpp::Rcout << "fmask 255" << sum(fmask_mat == 255) << std::endl;
 
             //Rcpp::Rcout << fillnofill_mat.n_rows << std::endl;
             //Rcpp::Rcout << fillnofill_mat.n_cols << std::endl;
@@ -256,35 +267,35 @@ for (sitecode in sitecodes) {
         mosaic_block <- cxxfunction(signature(img="numeric", msk="numeric"),
                                      body=src, plugin="RcppArmadillo")
 
-#         results <- mosaic_block(image_array, mask_array)
-#         plot(raster(matrix(results$img[, 1], nrow=bs$nrows[block_num], 
-#                            byrow=TRUE)))
-#
-#         plot(raster(matrix(results$msk[, 1], nrow=bs$nrows[block_num], 
-#                            byrow=TRUE)))
-#
-#         plot(raster(matrix(results$msk[, 2], nrow=bs$nrows[block_num], 
-#                            byrow=TRUE)))
-#
-#         plot(raster(matrix(image_array[, 1, 1], nrow=bs$nrows[block_num], 
-#                            byrow=TRUE)))
-#
-#         plot(raster(matrix(mask_array[, 1, 1], nrow=bs$nrows[block_num], 
-#                            byrow=TRUE)))
-#         plot(raster(matrix(mask_array[, 1, 2], nrow=bs$nrows[block_num], 
-#                            byrow=TRUE)))
+        # results <- mosaic_block(image_array, mask_array)
+        #
+        # plot(raster(matrix(results$img[, 1], nrow=bs$nrows[block_num], 
+        #                    byrow=TRUE)))
+        #
+        # plot(raster(matrix(results$msk[, 1], nrow=bs$nrows[block_num], 
+        #                    byrow=TRUE)))
+        #
+        # plot(raster(matrix(results$msk[, 2], nrow=bs$nrows[block_num], 
+        #                    byrow=TRUE)))
+        #
+        # plot(raster(matrix(image_array[, 1, 1], nrow=bs$nrows[block_num], 
+        #                    byrow=TRUE)))
+        #
+        # plot(raster(matrix(mask_array[, 1, 1], nrow=bs$nrows[block_num], 
+        #                    byrow=TRUE)))
+        #
+        # plot(raster(matrix(mask_array[, 2, 1], nrow=bs$nrows[block_num], 
+        #                    byrow=TRUE)))
 
         if (length(epoch_image_files_aligned) > 1) {
             epoch_mask_stacks <- lapply(epoch_mask_files_aligned, stack)
             epoch_image_stacks <- lapply(epoch_image_files_aligned, stack)
-            sample_mask <- epoch_mask_stacks[[1]]
-            sample_image <- epoch_image_stacks[[1]]
         } else {
-            epoch_mask_stacks <- stack(epoch_mask_files_aligned)
-            epoch_image_stacks <- stack(epoch_image_files_aligned)
-            sample_mask <- epoch_mask_stacks
-            sample_image <- epoch_image_stacks
+            epoch_mask_stacks <- list(stack(epoch_mask_files_aligned))
+            epoch_image_stacks <- list(stack(epoch_image_files_aligned))
         }
+        sample_mask <- epoch_mask_stacks[[1]]
+        sample_image <- epoch_image_stacks[[1]]
 
         mask_out <- brick(sample_mask, values=FALSE)
         # Set NAflag to 99 as a kludge - writeRaster doesn't allow omitting an 
@@ -321,10 +332,10 @@ for (sitecode in sitecodes) {
                     mask_array <- abind(mask_array, mask_bl, along=3)
                 }
             }
-            mosaiced_block <- mosaic_block(image_array, mask_array)
-            mask_out <- writeValues(mask_out, mosaiced_block$msk, 
+            mosaicked_block <- mosaic_block(image_array, mask_array)
+            mask_out <- writeValues(mask_out, mosaicked_block$msk, 
                                     bs$row[block_num])
-            image_out <- writeValues(image_out, mosaiced_block$img, 
+            image_out <- writeValues(image_out, mosaicked_block$img, 
                                      bs$row[block_num])
         }
         mask_out <- writeStop(mask_out)
