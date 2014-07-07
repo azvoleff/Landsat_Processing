@@ -25,13 +25,11 @@ imgtype <- 'raw'
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
-sitecodes <- sitecodes[sitecodes != 'BBS']
+sitecodes <- sitecodes[sitecodes != c('UDZ')]
 
 stopifnot(imgtype %in% c('normalized', 'raw'))
 
-sitecode <- c("BCI")
-
-input_basedir <- <- file.path(prefix, 'Landsat')
+input_basedir <- file.path(prefix, 'Landsat')
 output_dir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 
 notify('Starting mosaicking.')
