@@ -31,8 +31,12 @@ stopifnot(imgtype %in% c('normalized', 'raw'))
 
 sitecode <- c("BCI")
 
+input_basedir <- <- file.path(prefix, 'Landsat')
+output_dir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
+
 notify('Starting mosaicking.')
 for (sitecode in sitecodes) {
+    input_dir <- file.path(input_basedir, sitecode)
     raster_tmpdir <- file.path(temp, paste0('raster_',
                             paste(sample(c(letters, 0:9), 15), collapse='')))
     dir.create(raster_tmpdir)
@@ -45,8 +49,7 @@ for (sitecode in sitecodes) {
     } else {
         pattern='^[a-zA-Z]*_[0-9]{3}-[0-9]{3}_[0-9]{4}-[0-9]{3}_cf.tif$'
     }
-    base_dir <- file.path(prefix, 'Landsat', sitecode)
-    image_files <- dir(base_dir, pattern=pattern, full.names=TRUE)
+    image_files <- dir(input_dir, pattern=pattern, full.names=TRUE)
     image_stacks <- lapply(image_files, stack)
 
     mask_files <- paste0(file_path_sans_ext(image_files), '_masks.tif')
@@ -118,12 +121,12 @@ for (sitecode in sitecodes) {
         stopifnot(all(file_test('-f', epoch_mask_files)))
 
         if (imgtype == 'normalized') {
-            mosaic_out_file <- file.path(base_dir,
+            mosaic_out_file <- file.path(output_dir,
                                          paste0(sitecode, '_mosaic_normalized_', 
                                                 year(image_date_object),  
                                             extension(epoch_image_files[1])))
         } else {
-            mosaic_out_file <- file.path(base_dir,
+            mosaic_out_file <- file.path(output_dir,
                                          paste0(sitecode, '_mosaic_', 
                                                 year(image_date_object),  
                                             extension(epoch_image_files[1])))
@@ -393,14 +396,14 @@ for (sitecode in sitecodes) {
     } else {
         pattern <- '^[a-zA-Z]*_mosaic_[0-9]{4}.tif$'
     }
-    mosaic_files <- dir(base_dir, pattern=pattern, full.names=TRUE)
+    mosaic_files <- dir(output_dir, pattern=pattern, full.names=TRUE)
     mosaic_stacks <- lapply(mosaic_files, stack)
     mos_exts <- lapply(mosaic_stacks, extent)
     for (mos_ext in mos_exts) {
         stopifnot(mos_ext == mos_exts[[1]])
     }
 
-    dem_mosaic_filename <- file.path(base_dir,
+    dem_mosaic_filename <- file.path(output_dir,
                                      paste0(sitecode, '_mosaic_dem.tif'))
     if (builddem & (!file_test('-f', dem_mosaic_filename) | reprocess)) {
         message(paste0('Mosaicking DEMs for ', sitecode, '...'))
@@ -443,7 +446,7 @@ for (sitecode in sitecodes) {
         slopeaspect <- stack(round(raster(slopeaspect, layer=1) * 10000),
                              round(raster(slopeaspect, layer=2) * 1000))
 
-        slopeaspect_mosaic_filename <- file.path(base_dir,
+        slopeaspect_mosaic_filename <- file.path(output_dir,
                                          paste0(sitecode, '_mosaic_slopeaspect.tif'))
         slopeaspect <- writeRaster(slopeaspect, filename=slopeaspect_mosaic_filename, 
                                  overwrite=overwrite, datatype='INT2S')
