@@ -26,10 +26,9 @@ sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
 sitecodes <- sitecodes[sitecodes != 'BBS']
+sitecodes <- c('VB', 'YAN', 'YAS')
 
 stopifnot(imgtype %in% c('normalized', 'raw'))
-
-sitecode <- 'BCI'
 
 notify('Starting mosaicking.')
 for (sitecode in sitecodes) {
@@ -231,12 +230,17 @@ for (sitecode in sitecodes) {
 
                 if (gooddata_indices.n_elem > 0) {
                     //Rcpp::Rcout << "got here" << std::endl;
-                    img_out.row(pixelnum) = trans(mean(img_pixel.cols(gooddata_indices), 1));
+                    if (img_cube.n_slices == 1) {
+                        img_out.row(pixelnum) = img_pixel;
+                    } else {
+                        img_out.row(pixelnum) = trans(mean(img_pixel.cols(gooddata_indices), 1));
+                    }
                     // Take a conservative approach to merging masks - highest code 
                     // takes precedence (snow (3) over water (1) over clear (0)).
                     msk_out(pixelnum, 0) = 0;
                     msk_out(pixelnum, 1) = max(fmask_pixel(gooddata_indices));
                 } else {
+                    //Rcpp::Rcout << "got here 1" << std::endl;
                     img_out.row(pixelnum).fill(datum::nan);
                     // No data in this pixel. Use the lowest code in the
                     // output mosaic. This means cloud takes precedence
@@ -283,6 +287,8 @@ for (sitecode in sitecodes) {
         }
 
         mask_out <- brick(sample_mask, values=FALSE)
+        # Set NAflag to 99 as a kludge - writeRaster doesn't allow omitting an 
+        # NAflag, and I don't want 255 to be flagged as nodata
         mask_out <- writeStart(mask_out, filename=mask_out_file, 
                                overwrite=overwrite, datatype='INT1U', 
                                NAflag=99)
@@ -290,7 +296,6 @@ for (sitecode in sitecodes) {
         image_out <- writeStart(image_out, filename=mosaic_out_file, 
                                 overwrite=overwrite, datatype='INT2S')
         bs <- blockSize(sample_image)
-
         for (block_num in 1:bs$n) {
             image_dims <- c(bs$nrows[block_num], ncol(sample_image), 
                             nlayers(sample_image))
@@ -316,10 +321,10 @@ for (sitecode in sitecodes) {
                     mask_array <- abind(mask_array, mask_bl, along=3)
                 }
             }
-            mosaiced_blocks <- mosaic_block(image_array, mask_array)
-            mask_out <- writeValues(mask_out, mosaiced_blocks$msk, 
+            mosaiced_block <- mosaic_block(image_array, mask_array)
+            mask_out <- writeValues(mask_out, mosaiced_block$msk, 
                                     bs$row[block_num])
-            image_out <- writeValues(image_out, mosaiced_blocks$img, 
+            image_out <- writeValues(image_out, mosaiced_block$img, 
                                      bs$row[block_num])
         }
         mask_out <- writeStop(mask_out)
