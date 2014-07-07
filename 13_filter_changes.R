@@ -20,7 +20,7 @@ sitecodes <- sites$Site.Name.Code
 
 sitecodes <- 'PSH'
 
-image_basedir <- file.path(lcluc_folder, 'LCLUC_Classifications')
+image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 
 chgtraj_files <- dir(image_basedir,
                      pattern=paste0('^', sitecode, '_[0-9]{4}_[0-9]{4}_chgdetect_chgtraj.tif$'),

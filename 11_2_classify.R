@@ -26,7 +26,8 @@ model_files <- c()
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 for (sitecode in sitecodes) {
     these_image_files <- dir(image_basedir,
-                       pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors.tif$'))
+                             pattern=paste0('^', sitecode, 
+                                            '_mosaic_[0-9]{4}_predictors.tif$'))
 
     output_files <- paste0(file_path_sans_ext(these_image_files),
                            '_predclasses', extension(image_file))
@@ -39,7 +40,8 @@ for (sitecode in sitecodes) {
         next
     }
 
-    this_model_file <- file.path(image_basedir, paste0(sitecode, '_rfmodel.RData'))
+    this_model_file <- file.path(image_basedir,
+                                 paste0(sitecode, '_rfmodel.RData'))
     if (!file_test('-f', this_model_file)) {
         next
     }

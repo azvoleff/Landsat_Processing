@@ -18,7 +18,7 @@ overwrite <- TRUE
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
-image_basedir <- file.path(lcluc_folder, 'LCLUC_Classifications')
+image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 out_dir <- image_basedir
 stopifnot(file_test('-d', out_dir))
 

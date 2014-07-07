@@ -25,15 +25,15 @@ stopifnot(imgtype %in% c('normalized', 'raw'))
 
 image_files <- c()
 dem_files <- c()
+image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 slopeaspect_files <- c()
 for (sitecode in sitecodes) {
-    base_dir <- file.path(prefix, 'Landsat', sitecode)
     if (imgtype == 'normalized') {
-        pattern <- '^[a-zA-Z]*_mosaic_normalized_[0-9]{4}.tif$'
+        pattern <- paste0('^', sitecode, '_mosaic_normalized_[0-9]{4}.tif$')
     } else {
-        pattern <- '^[a-zA-Z]*_mosaic_[0-9]{4}.tif$'
+        pattern <- paste0('^', sitecode, '_mosaic_[0-9]{4}.tif$')
     }
-    these_image_files <- dir(base_dir, pattern=pattern, full.names=TRUE)
+    these_image_files <- dir(image_basedir, pattern=pattern, full.names=TRUE)
 
     output_files <- paste0(file_path_sans_ext(these_image_files), '_predictors.tif')
     if (length(these_image_files) >= 1 & !reprocess) {
@@ -44,8 +44,8 @@ for (sitecode in sitecodes) {
         next
     }
 
-    dem_file <- file.path(base_dir, paste0(sitecode, '_mosaic_dem.tif'))
-    slopeaspect_file <- file.path(base_dir, paste0(sitecode, 
+    dem_file <- file.path(image_basedir, paste0(sitecode, '_mosaic_dem.tif'))
+    slopeaspect_file <- file.path(image_basedir, paste0(sitecode, 
                                                   '_mosaic_slopeaspect.tif'))
 
     image_files <- c(image_files, these_image_files)

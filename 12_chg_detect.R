@@ -24,8 +24,9 @@ for (sitecode in sitecodes) {
     message(paste0('Processing ', sitecode, '...'))
 
     these_classes_files <- dir(image_basedir,
-                         pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors_predclasses.tif$'),
-                         full.names=TRUE)
+                               pattern=paste0('^', sitecode, 
+                                              '_mosaic_[0-9]{4}_predictors_predclasses.tif$'),
+                               full.names=TRUE)
 
     if (length(these_classes_files) == 0) {
         next

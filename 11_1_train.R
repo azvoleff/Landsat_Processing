@@ -34,7 +34,8 @@ for (sitecode in sitecodes) {
     message(paste0('Processing ', sitecode, '...'))
 
     image_files <- dir(image_basedir,
-                       pattern=paste0('^', sitecode, '_mosaic_[0-9]{4}_predictors.tif$'))
+                       pattern=paste0('^', sitecode, 
+                                      '_mosaic_[0-9]{4}_predictors.tif$'))
 
     output_files <- paste0(file_path_sans_ext(image_files), '_classified.tif')
 
