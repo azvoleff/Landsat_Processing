@@ -56,7 +56,7 @@ notify(paste0('Starting classification. ',
 num_res <- foreach (image_file=iter(image_files),
                     model_file=iter(model_files),
                     .packages=c('teamlucc', 'tools', 'stringr', 'notifyR'),
-                    .inorder=FALSE) %dopar% {
+                    .inorder=FALSE, .combine=c) %dopar% {
     raster_tmpdir <- file.path(temp, paste0('raster_',
                                paste(sample(c(letters, 0:9), 15), collapse='')))
     dir.create(raster_tmpdir)
