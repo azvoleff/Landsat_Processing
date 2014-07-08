@@ -1,7 +1,8 @@
-library(plyr)
 library(stringr)
+library(plyr)
 
-order_files <- dir('ESPA_orders', pattern='.txt', full.names=TRUE)
+#order_files <- dir('ESPA_orders', pattern='.txt', full.names=TRUE)
+order_files <- dir('ESPA_orders', pattern='noexclusions.txt', full.names=TRUE)
 read_order_file <- function(order_file) {
     ret <- read.table(order_file, col.names='scene_id')
     ret$scene_id_full <- ret$scene_id
@@ -15,7 +16,9 @@ downloaded_scenes <- str_extract(downloaded_landsats, '((LE[78])|(LT[45]))[0-9]{
 
 missing_scenes <- ordered_scenes[!(ordered_scenes$scene_id %in% downloaded_scenes), ]
 
-write.table(missing_scenes$scene_id_full, 'missing_scenes_order.txt', row.names=FALSE, 
+# write.table(missing_scenes$scene_id_full, 'missing_scenes_order.txt', row.names=FALSE, 
+#             col.names=FALSE, quote=FALSE, sep='\n')
+write.table(missing_scenes$scene_id_full, 'noexclusions_order.txt', row.names=FALSE, 
             col.names=FALSE, quote=FALSE, sep='\n')
 
 table(missing_scenes$order_file)

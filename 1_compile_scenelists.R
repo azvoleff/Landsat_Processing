@@ -1,7 +1,6 @@
 source('0_settings.R')
 
 library(stringr)
-library(plyr)
 
 order_folder <- 'ESPA_orders'
 scenelist_dir <- file.path(prefix, 'Landsat_scenelists')
@@ -29,14 +28,14 @@ for (scenelist_file in scenelist_files) {
     n <- n + 1
 }
 
-# Exclude tiles that are not specifically included
-include <- read.csv('Included_tiles.csv')
-scenes <- scenes[(paste(scenes$WRS.Path, scenes$WRS.Row) %in%
-                  paste(include$path, include$row)), ]
+# # Exclude tiles that are not specifically included
+# include <- read.csv('Included_tiles.csv')
+# scenes <- scenes[(paste(scenes$WRS.Path, scenes$WRS.Row) %in%
+#                   paste(include$path, include$row)), ]
+#
+# is_included <- paste(include$path, include$row) %in% paste(scenes$WRS.Path, scenes$WRS.Row)
+# if (!all(is_included)) {
+#     stop('missing some included scenes')
+# }
 
-is_included <- paste(include$path, include$row) %in% paste(scenes$WRS.Path, scenes$WRS.Row)
-if (!all(is_included)) {
-    stop('missing some included scenes')
-}
-
-save(scenes, file='1_all_scenes.RData')
+save(scenes, file='1_all_scenes_noexclusions.RData')
