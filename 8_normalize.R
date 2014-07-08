@@ -111,6 +111,12 @@ for (sitecode in sitecodes) {
         # of overlap of each other path/row with this base image
         foreach(wrspathrow=iter(remaining_wrspathrows),
                 .packages=c('stringr', 'teamlucc', 'lmodel2')) %do% {
+                    
+            raster_tmpdir <- file.path(temp, paste0('raster_',
+                                                    paste(sample(c(letters, 0:9), 15), collapse='')))
+            dir.create(raster_tmpdir)
+            rasterOptions(tmpdir=raster_tmpdir)
+                    
             these_image_files <- dir(input_dir,
                                      pattern=paste0('^', sitecode, '_', wrspathrow, 
                                                     '_[0-9]{4}-[0-9]{3}_cf.tif$'), 
@@ -195,6 +201,10 @@ for (sitecode in sitecodes) {
                             datatype=dataType(match_mask)[1], 
                             overwrite=overwrite)
             }
+            
+            removeTmpFiles(h=0)
+            unlink(raster_tmpdir)
+            
             # # Normalize remainder of this path/row layerstack to this base image
             # base_image <- dir(input_dir, pattern=paste0('^[a-zA-Z]*_', wrspathrow, 
             #                                            '_[0-9]{4}-[0-9]{3}_cf_normbase.tif$'),
