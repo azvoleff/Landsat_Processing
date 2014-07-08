@@ -34,13 +34,13 @@ auto_normalize_or_copy <- function(image_files) {
         base_copy_filename <- paste0(file_path_sans_ext(image_files), 
                                      '_normbase.tif')
         base_img <- writeRaster(base_img, filename=base_copy_filename, 
-                                datatype=dataType(base_img)[1], 
+                                datatype='INT2S',
                                 overwrite=overwrite)
         base_img <- stack(image_files)
         base_mask_copy_filename <- paste0(file_path_sans_ext(image_files), 
                                           '_normbase_masks.tif')
         base_mask <- writeRaster(base_mask, filename=base_mask_copy_filename, 
-                                 datatype=dataType(base_mask)[1], 
+                                 datatype='INT2S',
                                  overwrite=overwrite)
     }
 }
@@ -196,11 +196,10 @@ for (sitecode in sitecodes) {
                 output_normed_masks_file <- paste0(file_path_sans_ext(image_file), 
                                                    '_normalized_masks.tif')
                 writeRaster(normed_image, filename=output_normed_file, 
-                            datatype=dataType(unnormed_image)[1], 
+                            datatype='INT2S', 
                             overwrite=overwrite)
                 writeRaster(match_mask, filename=output_normed_masks_file, 
-                            datatype=dataType(match_mask)[1], 
-                            overwrite=overwrite)
+                            datatype='INT2S', overwrite=overwrite)
             }
             
             removeTmpFiles(h=0)
