@@ -45,6 +45,7 @@ auto_normalize_or_copy <- function(image_files) {
     }
 }
 
+notify("Starting normalization.")
 for (sitecode in sitecodes) {
     message(paste0('Normalizing images for ', sitecode, '...'))
 
@@ -217,3 +218,5 @@ for (sitecode in sitecodes) {
         }
     }
 }
+
+notify("Normalization completed.")
