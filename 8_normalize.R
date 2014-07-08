@@ -97,8 +97,8 @@ for (sitecode in sitecodes) {
 
         # Determine the base image for lg_pathrow (it was automatically selected by 
         # auto_normalize)
-        lg_base_file <- dir(base_dir, pattern=paste0('^', sitecode, '_', lg_pathrow, 
-                                                     '_[0-9]{4}-[0-9]{3}_cf_normbase.tif$'),
+        lg_base_file <- dir(input_dir, pattern=paste0('^', sitecode, '_', lg_pathrow, 
+                                                      '_[0-9]{4}-[0-9]{3}_cf_normbase.tif$'),
                             full.names=TRUE)
         lg_mask_file <- paste0(file_path_sans_ext(lg_base_file), '_masks', 
                                extension(lg_base_file))
@@ -111,7 +111,7 @@ for (sitecode in sitecodes) {
         # of overlap of each other path/row with this base image
         foreach(wrspathrow=iter(remaining_wrspathrows),
                 .packages=c('stringr', 'teamlucc', 'lmodel2')) %do% {
-            these_image_files <- dir(base_dir,
+            these_image_files <- dir(input_dir,
                                      pattern=paste0('^', sitecode, '_', wrspathrow, 
                                                     '_[0-9]{4}-[0-9]{3}_cf.tif$'), 
                                      full.names=TRUE)
@@ -196,7 +196,7 @@ for (sitecode in sitecodes) {
                             overwrite=overwrite)
             }
             # # Normalize remainder of this path/row layerstack to this base image
-            # base_image <- dir(base_dir, pattern=paste0('^[a-zA-Z]*_', wrspathrow, 
+            # base_image <- dir(input_dir, pattern=paste0('^[a-zA-Z]*_', wrspathrow, 
             #                                            '_[0-9]{4}-[0-9]{3}_cf_normbase.tif$'),
             #                   full.names=TRUE)
             # base_image_datestring <- str_extract(basename(base_image), '_[0-9]{4}-[0-9]{3}_')
