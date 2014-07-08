@@ -103,7 +103,6 @@ num_res <- foreach (image_file=iter(image_files),
     removeTmpFiles(h=0)
     unlink(raster_tmpdir)
 
-    notify(paste0('Finished classifying ', image_file))
     return(1)
 }
 
