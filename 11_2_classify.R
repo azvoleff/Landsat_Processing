@@ -29,10 +29,9 @@ for (sitecode in sitecodes) {
                              pattern=paste0('^', sitecode, 
                                             '_mosaic_[0-9]{4}_predictors.tif$'))
 
-    output_files <- paste0(file_path_sans_ext(these_image_files),
-                           '_predclasses', extension(these_image_files))
-
     if (length(these_image_files) >= 1 & !redo_classify) {
+        output_files <- paste0(file_path_sans_ext(these_image_files),
+                               '_predclasses', extension(these_image_files))
         these_image_files <- these_image_files[!file_test('-f', output_files)]
     }
 
