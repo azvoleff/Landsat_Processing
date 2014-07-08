@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd /localdisk/home/azvoleff/teamlucc
+cd /localdisk/home/azvoleff/Code/teamlucc
 
 git pull
 sed -i 's/dplyr/plyr/' ./DESCRIPTION
