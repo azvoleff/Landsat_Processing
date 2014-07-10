@@ -55,7 +55,10 @@ if (reprocess) {
         load(zoi_file)
         zoi <- spTransform(zoi, CRS(proj4string(fmask)))
 
-        fmask <- mask(fmask, zoi)
+        # Set the update value to 99 so that NA values inside the mask can be 
+        # properly picked up, and NAs outside the mask can be ignored (since 
+        # they are coded with the ignored 99 code.
+        fmask <- mask(fmask, zoi, value=99)
 
         bs <- blockSize(fmask)
         num_fill <- 0
@@ -63,22 +66,23 @@ if (reprocess) {
         num_clear <- 0
         num_water <- 0
         num_snow <- 0
+        num_missing <- 0
         for (block_num in 1:bs$n) {
             fmask_bl <- getValuesBlock(fmask, row=bs$row[block_num], 
                                        nrows=bs$nrows[block_num])
+            num_missing <- num_missing + sum(is.na(fmask_bl))
             num_fill <- num_fill + sum(fmask_bl == 255, na.rm=TRUE)
             num_cloud <- num_cloud + sum(fmask_bl == 2, na.rm=TRUE) + sum(fmask_bl == 4, na.rm=TRUE)
             num_clear <- num_clear + sum(fmask_bl == 0, na.rm=TRUE)
             num_water <- num_water + sum(fmask_bl == 1, na.rm=TRUE)
             num_snow <- num_snow + sum(fmask_bl == 3, na.rm=TRUE)
         }
-        num_pixels <- num_fill + num_cloud + num_clear + num_water + num_snow
+        num_pixels <- num_fill + num_cloud + num_clear + num_water + num_snow + num_missing
         return(data.frame(site=sitecode, date=year, num_fill=num_fill, 
-                          num_cloud=num_cloud, num_clear=num_clear, 
-                          num_water=num_water, num_snow=num_snow, 
-                          total_pixels=num_pixels))
+                          num_missing=num_missing, num_cloud=num_cloud, 
+                          num_clear=num_clear, num_water=num_water, 
+                          num_snow=num_snow, total_pixels=num_pixels))
     }
-    save(mosaic_stats, file=mosaic_stats_RData_file)
 
     # Add rows with num_fill equal to the number of pixels in the whole image for 
     # sites without any data for a particular year.  Do this with a merge.
@@ -86,13 +90,14 @@ if (reprocess) {
     miss_data$date <- rep(unique(mosaic_stats$date), length.out=nrow(miss_data))
     miss_data$num_fill <- mosaic_stats$total_pixels[match(miss_data$site, 
                                                           mosaic_stats$site)]
-    miss_data$total_pixels <- miss_data$num_missing
+    miss_data$total_pixels <- miss_data$num_fill
     miss_data <- miss_data[!(paste(miss_data$site, miss_data$date) %in% 
                              paste(mosaic_stats$site, mosaic_stats$date)), ]
 
     stopifnot(sum(is.na(mosaic_stats)) == 0)
     mosaic_stats <- merge(mosaic_stats, miss_data, all=TRUE)
     mosaic_stats[is.na(mosaic_stats)] <- 0
+    save(mosaic_stats, file=mosaic_stats_RData_file)
 }
 load(mosaic_stats_RData_file)
 
