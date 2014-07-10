@@ -31,8 +31,6 @@ for (sitecode in sitecodes) {
         next
     }
 
-    class_key <- read.csv('H:/Data/TEAM/LCLUC_Training/LCLUC_Classes_Key.csv')
-
     sitename <- as.character(sites$Site.Name.Short[match(sitecode, sites$Site.Name.Code)])
 
     freqs <- foreach(freqs_file=iter(freqs_files),
@@ -41,10 +39,6 @@ for (sitecode in sitecodes) {
         time_string <- str_extract(freqs_file, '[0-9]{4}-[0-9]{4}')
 
         freqs <- read.csv(file.path(image_basedir, freqs_file))
-        freqs$t0_name <- gsub('X', '', freqs$t0_name)
-        freqs$t0_name <- class_key$Class[match(freqs$t0_name, class_key$Code)]
-        freqs$t1_name <- gsub('X', '', freqs$t1_name)
-        freqs$t1_name <- class_key$Class[match(freqs$t1_name, class_key$Code)]
         freqs$t0_name_abbrev <- abbreviate(freqs$t0_name, 6)
         freqs$t1_name_abbrev <- abbreviate(freqs$t1_name, 6)
         freqs$Transition <- paste(freqs$t0_name_abbrev, freqs$t1_name_abbrev, sep=' -> ')
