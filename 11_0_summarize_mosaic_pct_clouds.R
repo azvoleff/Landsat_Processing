@@ -16,22 +16,24 @@ overwrite <- TRUE
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
-reprocess <- FALSE
+reprocess <- TRUE
+imgtype <- 'raw'
 
 ###############################################################################
 # Summarize mosaics
-
 mosaic_stats_RData_file <- 'mosaic_pixel_stats.RData'
 if (reprocess) {
-    imgtype <- 'raw'
     stopifnot(imgtype %in% c('normalized', 'raw'))
-    base_dir <- file.path(prefix, 'Landsat')
+    image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
     if (imgtype == 'normalized') {
         pattern <- '^[a-zA-Z]*_mosaic_normalized_[0-9]{4}.tif$'
     } else {
         pattern <- '^[a-zA-Z]*_mosaic_[0-9]{4}.tif$'
     }
-    mosaic_files <- dir(base_dir, pattern=pattern, full.names=TRUE, recursive=TRUE)
+    mosaic_files <- dir(image_basedir, pattern=pattern, full.names=TRUE, recursive=TRUE)
+
+    sitecodes <- str_extract(basename(mosaic_files), '^[a-zA-Z]*')
+    mosaic_files <- mosaic_files[sitecodes != 'BBS']
 
     mosaic_stats <- foreach(mosaic_file=iter(mosaic_files),
                             .packages=c('raster', 'tools', 'stringr'),
@@ -77,7 +79,6 @@ cloud_wide_table <- dcast(cloud_pcts, site ~ date)
 cloud_wide_table[2:ncol(cloud_wide_table)] <- round(cloud_wide_table[2:ncol(cloud_wide_table)], 2)
 write.csv(cloud_wide_table, file='mosaic_pixel_cloud_pcts.csv', row.names=FALSE)
 
-
 ###############################################################################
 # Summarize DEM mosaics
 #
@@ -88,8 +89,8 @@ write.csv(cloud_wide_table, file='mosaic_pixel_cloud_pcts.csv', row.names=FALSE)
 # - Max slope
 get_dem_status <- function(pattern, name) {
     statuses <- foreach(sitecode=iter(sitecodes), .combine=rbind) %do% {
-        base_dir <- file.path(prefix, 'Landsat', sitecode)
-        these_files <- dir(base_dir, pattern=pattern)
+        image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
+        these_files <- dir(image_basedir, pattern=pattern)
         if (length(these_files) >= 1) {
             statuses <- data.frame(site=sitecode, this_status=TRUE)
         } else {
