@@ -21,7 +21,7 @@ sitecodes <- sites$Site.Name.Code
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 
-reprocess <- TRUE
+reprocess <- FALSE
 imgtype <- 'raw'
 
 ###############################################################################
@@ -58,7 +58,7 @@ if (reprocess) {
         # Set the update value to 99 so that NA values inside the mask can be 
         # properly picked up, and NAs outside the mask can be ignored (since 
         # they are coded with the ignored 99 code.
-        fmask <- mask(fmask, zoi, value=99)
+        fmask <- mask(fmask, zoi, updatevalue=99)
 
         bs <- blockSize(fmask)
         num_fill <- 0
@@ -99,10 +99,11 @@ if (reprocess) {
     mosaic_stats[is.na(mosaic_stats)] <- 0
     save(mosaic_stats, file=mosaic_stats_RData_file)
 }
+
 load(mosaic_stats_RData_file)
 
 missing_summary <- summarize(group_by(mosaic_stats, site, date),
-                             pct_cloud=(num_cloud / (num_clear + num_water + num_cloud + num_snow))*100,
+                             pct_cloud=(num_cloud / (num_fill + num_clear + num_water + num_cloud + num_snow))*100,
                              pct_missing=(num_fill / (num_fill + num_clear + num_water + num_cloud + num_snow)*100))
 #NaN results from mosaicks with ALL data missing
 missing_summary$pct_cloud[is.nan(missing_summary$pct_cloud)] <- 0
@@ -110,28 +111,44 @@ filter(missing_summary, pct_cloud > 1)
 filter(missing_summary, pct_cloud > 5)
 filter(missing_summary, pct_missing > 5)
 
-plot_codes <- data.frame(site=unique(missing_summary$site))
-plot_codes$shape <- factor(rep(1:4, length.out=nrow(plot_codes)))
-plot_codes$colour <- factor(rep(1:4, each=4, length.out=nrow(plot_codes)))
-plot_codes$linetype <- factor(rep(1:4, each=4, length.out=nrow(plot_codes)))
-mosaic_stats <- merge(mosaic_stats, plot_codes)
-
-missing_summary <- merge(missing_summary, plot_codes)
+ggplot(missing_summary) +
+    geom_line(aes(date, pct_cloud, colour=site, linetype=site)) +
+    geom_point(aes(date, pct_cloud, colour=site, shape=site)) +
+    scale_colour_manual("Site", values=rep(1:4, each=4, length.out=16)) +
+    scale_shape_manual("Site", values=rep(1:4, length.out=16)) +
+    scale_linetype_manual("Site", values=rep(1:4, length.out=16)) +
+    xlab("Epoch") + ylab("Percent clouded (of ZOI)")
 
 ggplot(missing_summary) +
-    geom_line(aes(date, pct_cloud, colour=colour, linetype=linetype, group=site)) +
-    geom_point(aes(date, pct_cloud, colour=colour, shape=shape, group=site)) +
-    scale_colour_manual("Site", labels=plot_codes$site, breaks=plot_codes$colour, values=mosaic_stats$colour) +
-    scale_shape_manual("Site", labels=plot_codes$site, breaks=plot_codes$shape, values=mosaic_stats$shape) +
-    scale_linetype_manual("Site", labels=plot_codes$site, breaks=plot_codes$linetype, values=mosaic_stats$linetype)
+    geom_line(aes(date, pct_missing, colour=site, linetype=site)) +
+    geom_point(aes(date, pct_missing, colour=site, shape=site)) +
+    scale_colour_manual("Site", values=rep(1:4, each=4, length.out=16)) +
+    scale_shape_manual("Site", values=rep(1:4, length.out=16)) +
+    scale_linetype_manual("Site", values=rep(1:4, length.out=16)) +
+    xlab("Epoch") + ylab("Percent missing (of ZOI)")
 
 ggplot(missing_summary) +
-    geom_line(aes(date, pct_missing, colour=colour, linetype=linetype, group=site)) +
-    geom_point(aes(date, pct_missing, colour=colour, shape=shape, group=site)) +
-    scale_colour_manual("Site", labels=plot_codes$site, breaks=plot_codes$colour, values=mosaic_stats$colour) +
-    scale_shape_manual("Site", labels=plot_codes$site, breaks=plot_codes$shape, values=mosaic_stats$shape) +
-    scale_linetype_manual("Site", labels=plot_codes$site, breaks=plot_codes$linetype, values=mosaic_stats$linetype)
+    geom_line(aes(date, pct_cloud)) +
+    geom_point(aes(date, pct_cloud)) +
+    facet_wrap(~site) +
+    xlab("Epoch") + ylab("Percent clouded (of ZOI)")
 
+ggplot(missing_summary) +
+    geom_line(aes(date, pct_missing)) +
+    geom_point(aes(date, pct_missing)) +
+    facet_wrap(~site) +
+    xlab("Epoch") + ylab("Percent missing (of ZOI)")
+
+missing_melt <- melt(missing_summary, id.vars=c('site', 'date'))
+missing_melt$variable <- factor(missing_melt$variable, levels=c('pct_cloud', 'pct_missing'), labels=c('Clouded', 'Missing'))
+ggplot(missing_melt) +
+    geom_line(aes(date, value, colour=variable, linetype=variable)) +
+    geom_point(aes(date, value, colour=variable, linetype=variable, shape=variable)) +
+    labs(colour="Type of data",
+         shape="Type of data",
+         linetype="Type of data") +
+    facet_wrap(~site) +
+    xlab("Epoch") + ylab("Percent of ZOI")
 
 
 cloud_wide_table <- dcast(missing_summary, site ~ date)
