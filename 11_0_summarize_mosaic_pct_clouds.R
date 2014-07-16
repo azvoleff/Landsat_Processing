@@ -149,6 +149,7 @@ ggplot(missing_melt) +
          linetype="Type of data") +
     facet_wrap(~site) +
     xlab("Epoch") + ylab("Percent of ZOI")
+ggsave('missing_data_summary.png', width=10, height=7.5, dpi=300)
 
 
 cloud_wide_table <- dcast(missing_summary, site ~ date)
