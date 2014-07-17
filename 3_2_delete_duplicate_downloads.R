@@ -7,10 +7,12 @@ dl_landsats <- dir(base_dir, pattern='.tar.gz')
 dl_scenes <- str_extract(dl_landsats, '((LE[78])|(LT[45]))[0-9]{13}')
 dl_scenes_process_times <- gsub('SC', '', str_extract(dl_landsats, 'SC[0-9]{14}'))
 dl_scenes_process_times <- strptime(dl_scenes_process_times, format='%Y%m%d%H%M%S', tz='GMT')
+scene_date <- as.Date(substr(dl_scenes, 10, 16), '%Y%j')
 
 dl_scenes <- data.frame(filename=dl_landsats,
                         scene_id=dl_scenes, 
-                        process_time=dl_scenes_process_times)
+                        process_time=dl_scenes_process_times,
+                        date=scene_date)
 
 dim(dl_scenes)
 
