@@ -55,9 +55,9 @@ if (reprocess) {
         load(zoi_file)
         zoi <- spTransform(zoi, CRS(proj4string(fmask)))
 
-        # Set masked areas to 99 so they can be differentiated. Don't use mask 
-        # as it has a bug where it doesn't set NA areas in the image to the 
-        # updatevalue
+        # Set masked areas to 99 so they can be differentiated from other NAs 
+        # in fmask.  Don't use mask as it has a bug where it doesn't set NA 
+        # areas in the image to the updatevalue
         zoi <- rasterize(zoi, fmask, 1, silent=TRUE)
         fmask[is.na(zoi)] <- 99
 
@@ -104,8 +104,8 @@ if (reprocess) {
 load(mosaic_stats_RData_file)
 
 missing_summary <- summarize(group_by(mosaic_stats, site, date),
-                             pct_cloud=(num_cloud / (num_fill + num_clear + num_water + num_cloud + num_snow))*100,
-                             pct_missing=(num_fill / (num_fill + num_clear + num_water + num_cloud + num_snow)*100))
+                             pct_cloud=(num_cloud / (num_fill + num_missing + num_clear + num_water + num_cloud + num_snow))*100,
+                             pct_missing=(num_fill + num_missing) / (num_fill + num_missing + num_clear + num_water + num_cloud + num_snow)*100))
 #NaN results from mosaicks with ALL data missing
 missing_summary$pct_cloud[is.nan(missing_summary$pct_cloud)] <- 0
 filter(missing_summary, pct_cloud > 1)

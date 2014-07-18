@@ -9,6 +9,8 @@ library(dplyr)
 library(reshape2)
 library(stringr)
 
+library(scales) # for percent format
+
 img_width <- 10
 img_height <- 7.5
 img_dpi <- 300
@@ -118,7 +120,7 @@ for (sitecode in unique(traj_freqs$sitecode)) {
 
 # Plot percentage of pixels changing over time
 class_freqs <- group_by(class_freqs, sitecode, year)
-class_freqs <- mutate(class_freqs, pct=freq/sum(freq[!is.na(name)])*100)
+class_freqs <- mutate(class_freqs, pct=freq/sum(freq[!is.na(name)]))
 ggplot(class_freqs) +
     geom_line(aes(year, pct, colour=name, linetype=name)) +
     geom_point(aes(year, pct, colour=name, shape=name)) + 
@@ -132,7 +134,8 @@ ggplot(class_freqs) +
     ylim(c(0, 100)) +
     theme(axis.text.y=element_text(angle=90, hjust=.5),
           legend.key.size=unit(1.5, "line"),
-          panel.grid.major=element_blank())
+          panel.grid.major=element_blank()) +
+    scale_y_continuous(labels=percent_format())
 ggsave('class_frequencies_all_sites.png',
        height=img_height, width=img_width, dpi=img_dpi)
 
