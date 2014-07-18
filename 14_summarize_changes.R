@@ -19,10 +19,8 @@ sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
-image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 out_dir <- image_basedir
 stopifnot(file_test('-d', out_dir))
-
 
 class_names_pretty <- c('Urban/built',
                         'Agriculture',
@@ -30,21 +28,24 @@ class_names_pretty <- c('Urban/built',
                         'Natural forest',
                         'Other vegetation',
                         'Bare',
-                        'Water')
+                        'Water',
+                        'Unknown')
 class_names_R <- c('Urban.built',
                    'Agriculture',
                    'Plantation.forest',
                    'Natural.forest',
                    'Other.vegetation',
                    'Bare',
-                   'Water')
+                   'Water',
+                   'Unknown')
 class_names_abbrev <- c('Urban',
                         'Ag',
                         'PlanFor',
                         'NatFor',
                         'OthVeg',
                         'Bare',
-                        'Water')
+                        'Water',
+                        'Unk')
 
 traj_freqs_files <- dir(image_basedir,
                    pattern='^[a-zA-Z]*_[0-9]{4}-[0-9]{4}_chgdetect_chgtraj_freqs.csv$')
@@ -78,12 +79,17 @@ class_freqs_files <- dir(image_basedir,
 class_freqs <- foreach(class_freqs_file=iter(class_freqs_files),
                        .packages=c('ggplot2', 'dplyr'),
                        .combine=rbind, .inorder=FALSE) %do% {
-    class_freqs <- read.csv(file.path(image_basedir, class_freqs_file))
+    class_freqs <- read.csv(file.path(image_basedir, class_freqs_file), stringsAsFactors=FALSE)
+    class_freqs$name[is.na(class_freqs$code)] <- 'Unknown'
+    class_freqs$code[class_freqs$name == 'Unknown'] <- '-1'
+    # Ignore areas outside ZOI (areas coded 99)
+    class_freqs <- class_freqs[!(class_freqs$code == 99), ]
     class_freqs$name <- ordered(class_freqs$name, levels=class_names_R, 
                                 labels=class_names_pretty)
     class_freqs$name_abbrev <- ordered(class_names_abbrev[match(class_freqs$name, 
                                                              class_names_pretty)], 
                                        levels=class_names_abbrev)
+
     return(class_freqs)
 }
 
@@ -116,13 +122,17 @@ class_freqs <- mutate(class_freqs, pct=freq/sum(freq[!is.na(name)])*100)
 ggplot(class_freqs) +
     geom_line(aes(year, pct, colour=name, linetype=name)) +
     geom_point(aes(year, pct, colour=name, shape=name)) + 
+    scale_colour_manual("Site", values=rep(1:4, length.out=16)) +
+    scale_shape_manual("Site", values=rep(1:4, length.out=16)) +
+    scale_linetype_manual("Site", values=rep(1:4, each=4, length.out=16)) +
     theme_grey(base_size=18) +
     facet_wrap(~ sitecode) +
     labs(linetype="Class", colour="Class", shape="Class") +
     xlab('Year') + ylab('Percent of Landscape') +
+    ylim(c(0, 100)) +
     theme(axis.text.y=element_text(angle=90, hjust=.5),
           legend.key.size=unit(1.5, "line"),
           panel.grid.major=element_blank())
-ggsave(file.path(out_dir, 'class_frequencies_all_sites.png'),
+ggsave('class_frequencies_all_sites.png',
        height=img_height, width=img_width, dpi=img_dpi)
 

@@ -21,7 +21,7 @@ sitecodes <- sites$Site.Name.Code
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 
-reprocess <- FALSE
+reprocess <- TRUE
 imgtype <- 'raw'
 
 ###############################################################################
@@ -55,10 +55,11 @@ if (reprocess) {
         load(zoi_file)
         zoi <- spTransform(zoi, CRS(proj4string(fmask)))
 
-        # Set the update value to 99 so that NA values inside the mask can be 
-        # properly picked up, and NAs outside the mask can be ignored (since 
-        # they are coded with the ignored 99 code.
-        fmask <- mask(fmask, zoi, updatevalue=99)
+        # Set masked areas to 99 so they can be differentiated. Don't use mask 
+        # as it has a bug where it doesn't set NA areas in the image to the 
+        # updatevalue
+        zoi <- rasterize(zoi, fmask, 1, silent=TRUE)
+        fmask[is.na(zoi)] <- 99
 
         bs <- blockSize(fmask)
         num_fill <- 0

@@ -19,6 +19,8 @@ sitecodes <- sites$Site.Name.Code
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 
+###############################################################################
+# Output change trajectory frequency tables for each image
 chgtraj_files <- dir(image_basedir,
                      pattern=paste0('^[a-zA-Z]{2,3}_[0-9]{4}-[0-9]{4}_chgdetect_chgtraj.tif$'),
                      full.names=TRUE)
@@ -27,7 +29,7 @@ chgtraj_lut_files <- dir(image_basedir,
                          full.names=TRUE)
 stopifnot(length(chgtraj_files) == length(chgtraj_lut_files))
 
-foreach (chgtraj_file=iter(chgtraj_files),
+retvals <- foreach (chgtraj_file=iter(chgtraj_files),
          chgtraj_lut_file=iter(chgtraj_lut_files),
          .packages=c('tools', 'stringr', 'raster', 'rgdal')) %dopar% {
     sitecode <- str_extract(basename(chgtraj_file), '^[a-zA-Z]*')
@@ -41,8 +43,11 @@ foreach (chgtraj_file=iter(chgtraj_files),
     load(zoi_file)
     zoi <- spTransform(zoi, CRS(proj4string(chgtraj_rast)))
 
-    # Set masked areas to 255 (code for fill)
-    chgtraj_rast <- mask(chgtraj_rast, zoi, update=255)
+    # Set masked areas to 99 so they can be differentiated. Don't use mask as 
+    # it has a bug where it doesn't set NA areas in the image to the 
+    # updatevalue
+    zoi <- rasterize(zoi, chgtraj_rast, 1, silent=TRUE)
+    chgtraj_rast[is.na(zoi)] <- 99
 
     traj_freqs <- data.frame(freq(chgtraj_rast))
     chg_freqs <- read.csv(chgtraj_lut_file)
@@ -52,6 +57,7 @@ foreach (chgtraj_file=iter(chgtraj_files),
     write.csv(chg_freqs, file=freqs_filename, row.names=FALSE)
 }
 
+###############################################################################
 # Output simple class frequency tables for each image
 predclasses_files <- dir(image_basedir,
                          pattern=paste0('^[a-zA-Z]{2,3}_mosaic_[0-9]{4}_predictors_predclasses.tif$'),
@@ -60,7 +66,8 @@ classeskey_files <- dir(image_basedir,
                         pattern=paste0('^[a-zA-Z]{2,3}_mosaic_[0-9]{4}_predictors_classeskey.csv$'),
                         full.names=TRUE)
 stopifnot(length(classeskey_files) == length(predclasses_files))
-foreach (predclasses_file=iter(predclasses_files),
+
+retvals <- foreach (predclasses_file=iter(predclasses_files),
          classeskey_file=iter(classeskey_files),
          .packages=c('stringr', 'tools', 'raster')) %dopar% {
     sitecode <- str_extract(basename(predclasses_file), '^[a-zA-Z]*')
@@ -72,9 +79,13 @@ foreach (predclasses_file=iter(predclasses_files),
                     full.names=TRUE)
     stopifnot(length(zoi_file) == 1)
     load(zoi_file)
+    zoi <- spTransform(zoi, CRS(proj4string(classes_rast)))
 
-    # Set masked areas to 255 (code for fill)
-    classes_rast <- mask(classes_rast, zoi, update=255)
+    # Set masked areas to 99 so they can be differentiated. Don't use mask as 
+    # it has a bug where it doesn't set NA areas in the image to the 
+    # updatevalue
+    zoi <- rasterize(zoi, classes_rast, 1, silent=TRUE)
+    classes_rast[is.na(zoi)] <- 99
 
     classeskey <- read.csv(classeskey_file)
     class_freqs <- data.frame(freq(classes_rast))
