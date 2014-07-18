@@ -29,9 +29,10 @@ chgtraj_lut_files <- dir(image_basedir,
                          full.names=TRUE)
 stopifnot(length(chgtraj_files) == length(chgtraj_lut_files))
 
-retvals <- foreach (chgtraj_file=iter(chgtraj_files),
-         chgtraj_lut_file=iter(chgtraj_lut_files),
-         .packages=c('tools', 'stringr', 'raster', 'rgdal')) %dopar% {
+retvals <- foreach (chgtraj_file=iter(chgtraj_files), 
+                    chgtraj_lut_file=iter(chgtraj_lut_files),
+                    .packages=c('tools', 'stringr', 'raster',
+                                'rgdal')) %dopar% {
     sitecode <- str_extract(basename(chgtraj_file), '^[a-zA-Z]*')
 
     chgtraj_rast <- raster(chgtraj_file)
@@ -68,8 +69,8 @@ classeskey_files <- dir(image_basedir,
 stopifnot(length(classeskey_files) == length(predclasses_files))
 
 retvals <- foreach (predclasses_file=iter(predclasses_files),
-         classeskey_file=iter(classeskey_files),
-         .packages=c('stringr', 'tools', 'raster')) %dopar% {
+                    classeskey_file=iter(classeskey_files), 
+                    .packages=c('stringr', 'tools', 'raster')) %dopar% {
     sitecode <- str_extract(basename(predclasses_file), '^[a-zA-Z]*')
     year <- str_extract(predclasses_file, '[0-9]{4}')
     classes_rast <- stack(predclasses_file)
