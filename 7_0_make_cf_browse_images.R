@@ -16,7 +16,7 @@ image_files <- dir(input_dir,
                    full.names=TRUE)
 
 retvals <- foreach(image_file=iter(image_files),
-                   .packages=c('teamlucc')) %do% {
+                   .packages=c('teamlucc')) %dopar% {
     rasterOptions(tmpdir=paste0(tempdir(), '_raster'))
     jpeg(filename=paste0(file_path_sans_ext(image_file), '_browse.jpg'), 
          height=1000, width=1000, quality=75)
