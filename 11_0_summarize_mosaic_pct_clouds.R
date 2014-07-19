@@ -1,6 +1,7 @@
 source('0_settings.R')
 
 library(stringr)
+library(gridExtra) # for unit
 library(tools)
 library(dplyr)
 library(reshape2)
@@ -10,6 +11,8 @@ library(ggplot2)
 library(foreach)
 library(iterators)
 library(doParallel)
+
+library(scales) # for percent format
 
 registerDoParallel(n_cpus)
 
@@ -21,7 +24,7 @@ sitecodes <- sites$Site.Name.Code
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 
-reprocess <- TRUE
+reprocess <- FALSE
 imgtype <- 'raw'
 
 ###############################################################################
@@ -103,16 +106,16 @@ if (reprocess) {
 
 load(mosaic_stats_RData_file)
 
-missing_summary <- summarize(group_by(mosaic_stats, site, date),
-                             pct_cloud=(num_cloud / (num_fill + num_missing + num_clear + num_water + num_cloud + num_snow))*100,
-                             pct_missing=(num_fill + num_missing) / (num_fill + num_missing + num_clear + num_water + num_cloud + num_snow)*100))
+clmiss_summary <- summarize(group_by(mosaic_stats, site, date),
+                             pct_cloud=num_cloud / (num_fill + num_missing + num_clear + num_water + num_cloud + num_snow),
+                             pct_missing=(num_fill + num_missing) / (num_fill + num_missing + num_clear + num_water + num_cloud + num_snow))
 #NaN results from mosaicks with ALL data missing
-missing_summary$pct_cloud[is.nan(missing_summary$pct_cloud)] <- 0
-filter(missing_summary, pct_cloud > 1)
-filter(missing_summary, pct_cloud > 5)
-filter(missing_summary, pct_missing > 5)
+clmiss_summary$pct_cloud[is.nan(clmiss_summary$pct_cloud)] <- 0
+filter(clmiss_summary, pct_cloud > 1)
+filter(clmiss_summary, pct_cloud > 5)
+filter(clmiss_summary, pct_missing > 5)
 
-ggplot(missing_summary) +
+ggplot(clmiss_summary) +
     geom_line(aes(date, pct_cloud, colour=site, linetype=site)) +
     geom_point(aes(date, pct_cloud, colour=site, shape=site)) +
     scale_colour_manual("Site", values=rep(1:4, each=4, length.out=16)) +
@@ -120,7 +123,7 @@ ggplot(missing_summary) +
     scale_linetype_manual("Site", values=rep(1:4, length.out=16)) +
     xlab("Epoch") + ylab("Percent clouded (of ZOI)")
 
-ggplot(missing_summary) +
+ggplot(clmiss_summary) +
     geom_line(aes(date, pct_missing, colour=site, linetype=site)) +
     geom_point(aes(date, pct_missing, colour=site, shape=site)) +
     scale_colour_manual("Site", values=rep(1:4, each=4, length.out=16)) +
@@ -128,19 +131,19 @@ ggplot(missing_summary) +
     scale_linetype_manual("Site", values=rep(1:4, length.out=16)) +
     xlab("Epoch") + ylab("Percent missing (of ZOI)")
 
-ggplot(missing_summary) +
+ggplot(clmiss_summary) +
     geom_line(aes(date, pct_cloud)) +
     geom_point(aes(date, pct_cloud)) +
     facet_wrap(~site) +
     xlab("Epoch") + ylab("Percent clouded (of ZOI)")
 
-ggplot(missing_summary) +
+ggplot(clmiss_summary) +
     geom_line(aes(date, pct_missing)) +
     geom_point(aes(date, pct_missing)) +
     facet_wrap(~site) +
     xlab("Epoch") + ylab("Percent missing (of ZOI)")
 
-missing_melt <- melt(missing_summary, id.vars=c('site', 'date'))
+missing_melt <- melt(clmiss_summary, id.vars=c('site', 'date'))
 missing_melt$variable <- factor(missing_melt$variable, levels=c('pct_cloud', 'pct_missing'), labels=c('Clouded', 'Missing'))
 ggplot(missing_melt) +
     geom_line(aes(date, value, colour=variable, linetype=variable)) +
@@ -149,13 +152,29 @@ ggplot(missing_melt) +
          shape="Type of data",
          linetype="Type of data") +
     facet_wrap(~site) +
+    theme(legend.key.size=unit(1.5, "line"),
+          panel.grid.major=element_blank()) +
+    scale_y_continuous(labels=percent_format()) +
     xlab("Epoch") + ylab("Percent of ZOI")
-ggsave('missing_data_summary.png', width=10, height=7.5, dpi=300)
+ggsave('missing_data_summary_lines.png', width=10, height=7.5, dpi=300)
 
+ggplot(missing_melt) +
+    geom_bar(aes(date, value, fill=variable), stat="identity") +
+    labs(colour="Type of data",
+         shape="Type of data",
+         linetype="Type of data") +
+    facet_wrap(~site) +
+    scale_y_continuous(labels=percent_format()) +
+    theme(legend.key.size=unit(1.5, "line"),
+          panel.grid.major=element_blank()) +
+    xlab("Epoch") + ylab("Percent of ZOI")
+ggsave('missing_data_summary_bars.png', width=10, height=7.5, dpi=300)
 
-cloud_wide_table <- dcast(missing_summary, site ~ date)
+miss_summary <- summarize(group_by(mosaic_stats, site, date),
+                             pct_missing=(num_cloud + num_fill + num_missing) / (num_fill + num_missing + num_clear + num_water + num_cloud + num_snow))
+cloud_wide_table <- dcast(miss_summary, site ~ date)
 cloud_wide_table[2:ncol(cloud_wide_table)] <- round(cloud_wide_table[2:ncol(cloud_wide_table)], 2)
-write.csv(cloud_wide_table, file='mosaic_pixel_missing_summary.csv', row.names=FALSE)
+write.csv(cloud_wide_table, file='mosaic_pixel_miss_summary.csv', row.names=FALSE)
 
 ###############################################################################
 # Summarize DEM mosaics
