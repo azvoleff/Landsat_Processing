@@ -24,7 +24,7 @@ sitecodes <- sites$Site.Name.Code
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 
-reprocess <- FALSE
+reprocess <- TRUE
 imgtype <- 'raw'
 
 ###############################################################################
@@ -40,7 +40,6 @@ if (reprocess) {
     mosaic_files <- dir(image_basedir, pattern=pattern, full.names=TRUE, recursive=TRUE)
 
     sitecodes <- str_extract(basename(mosaic_files), '^[a-zA-Z]*')
-    mosaic_files <- mosaic_files[sitecodes != 'BBS']
 
     mosaic_stats <- foreach(mosaic_file=iter(mosaic_files),
                             .packages=c('raster', 'tools', 'stringr'),

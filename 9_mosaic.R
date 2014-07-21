@@ -26,7 +26,8 @@ sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
 sitecodes <- sitecodes[!(sitecodes %in% c('UDZ'))]
-sitecodes <- sitecodes[9:length(sitecodes)]
+
+sitecodes <- 'BBS'
 
 stopifnot(imgtype %in% c('normalized', 'raw'))
 

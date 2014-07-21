@@ -16,7 +16,7 @@ reprocess <- TRUE
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
-sitecodes <- sitecodes[!(sitecodes %in% c('BBS', 'BCI'))]
+sitecodes <- c('BBS', 'BCI')
 
 #imgtype <- 'normalized'
 imgtype <- 'raw'
