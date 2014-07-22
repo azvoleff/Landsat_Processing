@@ -21,7 +21,8 @@ predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi',
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
-sitecodes <- sitecodes[!(sitecodes %in% c('NAK', 'UDZ'))]
+
+sitecodes <- c('BBS', 'BCI', 'MAS', 'YAS', 'YAN', 'NNN')
 
 tr_polys_dir <- file.path(prefix, 'Landsat', 'LCLUC_Training')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')

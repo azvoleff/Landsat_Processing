@@ -95,5 +95,5 @@ retvals <- foreach (predclasses_file=iter(predclasses_files),
                          name=classeskey$class[match(class_freqs$code, classeskey$code)],
                          class_freqs)
     write.csv(class_freqs, file=paste0(file_path_sans_ext(predclasses_file), 
-                                       '_classfreqs.csv'))
+                                       '_classfreqs.csv'), row.names=FALSE)
 }
