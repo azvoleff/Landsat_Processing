@@ -20,7 +20,7 @@ predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi',
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
-sitecodes <- c('BBS', 'MAS', 'YAS', 'YAN', 'NNN')
+sitecodes <- c('BBS', 'YAS', 'YAN')
 
 image_files <- c()
 model_files <- c()
