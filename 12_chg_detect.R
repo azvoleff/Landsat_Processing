@@ -16,7 +16,7 @@ overwrite <- TRUE
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
-sitecodes <- c('BBS', 'BCI', 'MAS', 'YAS', 'YAN', 'NNN')
+sitecodes <- c('BBS', 'MAS', 'YAS', 'YAN', 'NNN')
 
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
