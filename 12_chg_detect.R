@@ -16,7 +16,9 @@ overwrite <- TRUE
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
+sitecodes <- c('BBS', 'BCI', 'MAS', 'YAS', 'YAN', 'NNN')
 
+zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 classes_file_1s <- c()
 classes_file_2s <- c()
@@ -131,6 +133,28 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
                                        paste(out_basename, 'chgtraj_lut.csv', 
                                              sep='_'))
     write.csv(chg_traj_out$lut, file=chg_traj_lut_filename, row.names=FALSE)
+
+    # Calculate change frequencies, masking out area outside of ZOI
+    zoi_file <- dir(zoi_folder, pattern=paste0('^ZOI_', sitecode, '_[0-9]{4}.RData'), 
+                    full.names=TRUE)
+    stopifnot(length(zoi_file) == 1)
+    load(zoi_file)
+    zoi <- spTransform(zoi, CRS(proj4string(chg_traj_image)))
+    zoi <- rasterize(zoi, chg_traj_image, 1, silent=TRUE)
+
+    # Set masked areas to 99 so they can be differentiated. Don't use mask as 
+    # it has a bug where it doesn't set NA areas in the image to the 
+    # updatevalue
+    chg_traj_image_masked <- chg_traj_image
+    chg_traj_image_masked[is.na(zoi)] <- 99
+
+    traj_freqs <- data.frame(freq(chg_traj_image_masked))
+    chg_freqs <- chg_traj_out$lut
+    chg_freqs$freq <- traj_freqs$count[match(chg_freqs$Code, traj_freqs$value)]
+    chg_freqs <- chg_freqs[order(chg_freqs$t0_name, chg_freqs$t1_name),]
+    freqs_filename <- file.path(image_basedir,
+                                paste(out_basename, 'freqs.csv', sep='_'))
+    write.csv(chg_freqs, file=freqs_filename, row.names=FALSE)
 
     removeTmpFiles(h=0)
     unlink(raster_tmpdir)

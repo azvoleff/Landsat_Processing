@@ -20,9 +20,11 @@ predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi',
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
+sitecodes <- c('BBS', 'BCI', 'MAS', 'YAS', 'YAN', 'NNN')
 
 image_files <- c()
 model_files <- c()
+zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 for (sitecode in sitecodes) {
     these_image_files <- dir(image_basedir,
@@ -99,6 +101,30 @@ num_res <- foreach (image_file=iter(image_files),
 
     key_file <- paste0(out_base, '_classeskey.csv')
     write.csv(results$codes, file=key_file, row.names=FALSE)
+
+    # Calculate class frequencies, masking out area outside of ZOI
+    zoi_file <- dir(zoi_folder, pattern=paste0('^ZOI_', sitecode, '_[0-9]{4}.RData'), 
+                    full.names=TRUE)
+    stopifnot(length(zoi_file) == 1)
+    load(zoi_file)
+    zoi <- spTransform(zoi, CRS(proj4string(classes)))
+    zoi <- rasterize(zoi, classes, 1, silent=TRUE)
+
+    # Set masked areas to 99 so they can be differentiated. Don't use mask as 
+    # it has a bug where it doesn't set NA areas in the image to the 
+    # updatevalue
+    classes_masked <- classes
+    classes_masked[is.na(zoi)] <- 99
+
+    class_freqs <- data.frame(freq(classes_masked))
+    names(class_freqs) <- c('code', 'freq')
+    class_freqs <- cbind(sitecode=sitecode, year=year,
+                         name=results$codes$class[match(class_freqs$code, results$codes$code)],
+                         class_freqs)
+    write.csv(class_freqs, file=paste0(out_base, '_classfreqs.csv'), row.names=FALSE)
+}
+
+
 
     removeTmpFiles(h=0)
     unlink(raster_tmpdir)
