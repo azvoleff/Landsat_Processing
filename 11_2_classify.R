@@ -4,7 +4,7 @@ library(foreach)
 library(iterators)
 library(doParallel)
 
-registerDoParallel(n_cpus)
+registerDoParallel(4)
 
 library(rgdal)
 library(stringr)
@@ -22,10 +22,11 @@ sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 sitecodes <- c('BBS', 'YAS', 'YAN')
 
-image_files <- c()
-model_files <- c()
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
+image_files <- c()
+model_files <- c()
+zoi_files <- c()
 for (sitecode in sitecodes) {
     these_image_files <- dir(image_basedir,
                              pattern=paste0('^', sitecode, 
@@ -46,18 +47,26 @@ for (sitecode in sitecodes) {
     if (!file_test('-f', this_model_file)) {
         next
     }
+    
+    this_zoi_file <- dir(zoi_folder,
+                         pattern=paste0('^ZOI_', sitecode, '_[0-9]{4}.RData'), 
+                         full.names=TRUE)
+    stopifnot(length(this_zoi_file) == 1)
 
     image_files <- c(image_files, these_image_files)
     model_files <- c(model_files, rep(this_model_file, length(these_image_files)))
+    zoi_files <- c(zoi_files, rep(this_zoi_file, length(these_image_files)))
 }
 
 stopifnot(length(image_files) == length(model_files))
+stopifnot(length(image_files) == length(zoi_files))
 
 notify(paste0('Starting classification. ',
               length(image_files), ' images to process.'))
 num_res <- foreach (image_file=iter(image_files),
                     model_file=iter(model_files),
-                    .packages=c('teamlucc', 'tools', 'stringr', 'notifyR'),
+                    zoi_file=iter(zoi_files),
+                    .packages=c('teamlucc', 'tools', 'stringr', 'notifyR', 'rgdal'),
                     .inorder=FALSE, .combine=c) %dopar% {
     raster_tmpdir <- file.path(temp, paste0('raster_',
                                paste(sample(c(letters, 0:9), 15), collapse='')))
@@ -103,9 +112,6 @@ num_res <- foreach (image_file=iter(image_files),
     write.csv(results$codes, file=key_file, row.names=FALSE)
 
     # Calculate class frequencies, masking out area outside of ZOI
-    zoi_file <- dir(zoi_folder, pattern=paste0('^ZOI_', sitecode, '_[0-9]{4}.RData'), 
-                    full.names=TRUE)
-    stopifnot(length(zoi_file) == 1)
     load(zoi_file)
     zoi <- spTransform(zoi, CRS(proj4string(classes)))
     zoi <- rasterize(zoi, classes, 1, silent=TRUE)
@@ -122,9 +128,6 @@ num_res <- foreach (image_file=iter(image_files),
                          name=results$codes$class[match(class_freqs$code, results$codes$code)],
                          class_freqs)
     write.csv(class_freqs, file=paste0(out_base, '_classfreqs.csv'), row.names=FALSE)
-}
-
-
 
     removeTmpFiles(h=0)
     unlink(raster_tmpdir)

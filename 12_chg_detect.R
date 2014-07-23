@@ -4,7 +4,7 @@ library(foreach)
 library(iterators)
 library(doParallel)
 
-registerDoParallel(n_cpus)
+registerDoParallel(6)
 
 library(rgdal)
 library(stringr)
@@ -22,6 +22,7 @@ zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 classes_file_1s <- c()
 classes_file_2s <- c()
+zoi_files <- c()
 for (sitecode in sitecodes) {
     these_classes_files <- dir(image_basedir,
                                pattern=paste0('^', sitecode, 
@@ -36,21 +37,30 @@ for (sitecode in sitecodes) {
         next
     }
 
+    this_zoi_file <- dir(zoi_folder,
+                         pattern=paste0('^ZOI_', sitecode, '_[0-9]{4}.RData'), 
+                         full.names=TRUE)
+    stopifnot(length(this_zoi_file) == 1)
+    
     # Setup pairs of image files
     these_classes_file_1s <- these_classes_files[1:(length(these_classes_files) - 1)]
     these_classes_file_2s <- these_classes_files[2:length(these_classes_files)]
 
     classes_file_1s <- c(classes_file_1s, these_classes_file_1s)
     classes_file_2s <- c(classes_file_2s, these_classes_file_2s)
+    
+    zoi_files <- c(zoi_files, rep(this_zoi_file, length(these_classes_files) - 1))
 }
 stopifnot(length(classes_file_1s) == length(classes_file_2s))
+stopifnot(length(classes_file_1s) == length(zoi_files))
 
 # Run change detection on each pair
 notify(paste0('Starting change detection. ',
               length(classes_file_1s), ' images to process.'))
 num_res <- foreach (classes_file_1=iter(classes_file_1s), 
-                    classes_file_2=iter(classes_file_2s), 
-                    .packages=c('teamlucc', 'notifyR', 'stringr'),
+                    classes_file_2=iter(classes_file_2s),
+                    zoi_file=iter(zoi_files),
+                    .packages=c('teamlucc', 'notifyR', 'stringr', 'rgdal'),
                     .combine=c, .inorder=FALSE) %dopar% {
     raster_tmpdir <- file.path(temp, paste0('raster_',
                                paste(sample(c(letters, 0:9), 15), collapse='')))
@@ -126,8 +136,8 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
     chg_traj_filename <- file.path(image_basedir,
                                    paste(out_basename, 'chgtraj.tif', sep='_'))
     chg_traj_image <- chg_traj_out$traj * image_mask
-    writeRaster(chg_traj_image, filename=chg_traj_filename, 
-                overwrite=overwrite, datatype='INT2S')
+    chg_traj_image <- writeRaster(chg_traj_image, filename=chg_traj_filename, 
+                                  overwrite=overwrite, datatype='INT2S')
 
     chg_traj_lut_filename <- file.path(image_basedir,
                                        paste(out_basename, 'chgtraj_lut.csv', 
@@ -135,9 +145,6 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
     write.csv(chg_traj_out$lut, file=chg_traj_lut_filename, row.names=FALSE)
 
     # Calculate change frequencies, masking out area outside of ZOI
-    zoi_file <- dir(zoi_folder, pattern=paste0('^ZOI_', sitecode, '_[0-9]{4}.RData'), 
-                    full.names=TRUE)
-    stopifnot(length(zoi_file) == 1)
     load(zoi_file)
     zoi <- spTransform(zoi, CRS(proj4string(chg_traj_image)))
     zoi <- rasterize(zoi, chg_traj_image, 1, silent=TRUE)
