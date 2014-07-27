@@ -25,9 +25,7 @@ imgtype <- 'raw'
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
-sitecodes <- sitecodes[!(sitecodes %in% c('UDZ'))]
-
-sitecodes <- 'BBS'
+sitecodes <- 'UDZ'
 
 stopifnot(imgtype %in% c('normalized', 'raw'))
 
@@ -430,8 +428,7 @@ for (sitecode in sitecodes) {
         dem_mosaic <- gdalwarp(dem_list, dstfile=dem_mosaic_filename,
                                te=dem_te, t_srs=to_srs, tr=to_res, 
                                r='cubicspline', output_Raster=TRUE, multi=TRUE, 
-                               of='GTiff',
-                               wo=paste0("NUM_THREADS=", n_cpus), 
+                               of='GTiff', wo=paste0("NUM_THREADS=", n_cpus), 
                                overwrite=overwrite)
 
         # Note that the default output of 'terrain' is in radians

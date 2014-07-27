@@ -20,7 +20,7 @@ predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi',
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
-sitecodes <- c('BBS', 'YAS', 'YAN')
+sitecodes <- c('MAS')
 
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
@@ -74,6 +74,7 @@ num_res <- foreach (image_file=iter(image_files),
     rasterOptions(tmpdir=raster_tmpdir)
     
     sitecode <- str_extract(basename(image_file), '^[a-zA-Z]')
+    year <- str_extract(image_file, '[0-9]{4}')
 
     load(model_file)
 
