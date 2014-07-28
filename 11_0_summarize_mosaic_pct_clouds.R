@@ -24,7 +24,7 @@ sitecodes <- sites$Site.Name.Code
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 
-reprocess <- TRUE
+reprocess <- FALSE
 imgtype <- 'raw'
 
 ###############################################################################
