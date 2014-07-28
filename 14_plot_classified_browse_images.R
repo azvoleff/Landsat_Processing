@@ -19,11 +19,6 @@ img_dpi <- 300
 
 overwrite <- TRUE
 
-sites <- read.csv('Site_Code_Key.csv')
-sitecodes <- sites$Site.Name.Code
-
-sitecodes <- c("YAN", "YAS")
-
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
@@ -131,6 +126,9 @@ retvals <- foreach (predclasses_file=iter(predclasses_files),
                     .packages=c('stringr', 'tools', 'raster', 'plyr', 'grid', 
                                 'rgdal', 'ggplot2')) %dopar% {
     sitecode <- str_extract(basename(predclasses_file), '^[a-zA-Z]*')
+
+    if (sitecode != "PSH") return(data.frame())
+
     year <- str_extract(predclasses_file, '[0-9]{4}')
     classes_rast <- stack(predclasses_file)
 
