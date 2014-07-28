@@ -165,7 +165,7 @@ for (sitecode in sitecodes) {
                 gdalwarp(epoch_image_file, dstfile=image_tiffile, 
                          r='cubicspline', of='GTiff', overwrite=overwrite, 
                          te=mosaic_te, tr=c(30, 30), ot='Int16', 
-                         co="COMPRESS=LZW")
+                         co="COMPRESS=LZW BIGTIFF=IF_SAFER")
                 return(data.frame(msk=mask_tiffile, img=image_tiffile, 
                                   stringsAsFactors=FALSE))
             }

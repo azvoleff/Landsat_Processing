@@ -56,7 +56,7 @@ stopifnot(length(classes_file_1s) == length(zoi_files))
 
 # Run change detection on each pair
 notify(paste0('Starting change detection. ',
-              length(classes_file_1s), ' images to process.'))
+              length(classes_file_1s), ' image sets to process.'))
 num_res <- foreach (classes_file_1=iter(classes_file_1s), 
                     classes_file_2=iter(classes_file_2s),
                     zoi_file=iter(zoi_files),
