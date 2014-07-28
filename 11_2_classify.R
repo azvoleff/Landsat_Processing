@@ -128,7 +128,7 @@ num_res <- foreach (image_file=iter(image_files),
     class_freqs <- cbind(sitecode=sitecode, year=year,
                          name=results$codes$class[match(class_freqs$code, results$codes$code)],
                          class_freqs)
-    write.csv(class_freqs, file=paste0(out_base, '_classfreqs.csv'), row.names=FALSE)
+    write.csv(class_freqs, file=paste0(out_base, '_predclasses_classfreqs.csv'), row.names=FALSE)
 
     removeTmpFiles(h=0)
     unlink(raster_tmpdir)

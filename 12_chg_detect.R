@@ -160,7 +160,7 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
     chg_freqs$freq <- traj_freqs$count[match(chg_freqs$Code, traj_freqs$value)]
     chg_freqs <- chg_freqs[order(chg_freqs$t0_name, chg_freqs$t1_name),]
     freqs_filename <- file.path(image_basedir,
-                                paste(out_basename, 'freqs.csv', sep='_'))
+                                paste(out_basename, 'chgtraj_freqs.csv', sep='_'))
     write.csv(chg_freqs, file=freqs_filename, row.names=FALSE)
 
     removeTmpFiles(h=0)
