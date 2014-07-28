@@ -154,7 +154,8 @@ ggplot(missing_melt) +
     theme(legend.key.size=unit(1.5, "line"),
           panel.grid.major=element_blank()) +
     scale_y_continuous(labels=percent_format()) +
-    xlab("Epoch") + ylab("Percent of ZOI")
+    xlab("Epoch") + ylab("Percent of ZOI") +
+    theme(axis.text.x = element_text(angle=45, hjust=1))
 ggsave('missing_data_summary_lines.png', width=10, height=7.5, dpi=300)
 
 ggplot(missing_melt) +
@@ -166,7 +167,8 @@ ggplot(missing_melt) +
     scale_y_continuous(labels=percent_format()) +
     theme(legend.key.size=unit(1.5, "line"),
           panel.grid.major=element_blank()) +
-    xlab("Epoch") + ylab("Percent of ZOI")
+    xlab("Epoch") + ylab("Percent of ZOI") +
+    theme(axis.text.x = element_text(angle=45, hjust=1))
 ggsave('missing_data_summary_bars.png', width=10, height=7.5, dpi=300)
 
 miss_summary <- summarize(group_by(mosaic_stats, site, date),
