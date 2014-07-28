@@ -73,7 +73,7 @@ num_res <- foreach (image_file=iter(image_files),
     dir.create(raster_tmpdir)
     rasterOptions(tmpdir=raster_tmpdir)
     
-    sitecode <- str_extract(basename(image_file), '^[a-zA-Z]')
+    sitecode <- str_extract(basename(image_file), '^[a-zA-Z]{2,3}')
     year <- str_extract(image_file, '[0-9]{4}')
 
     load(model_file)
