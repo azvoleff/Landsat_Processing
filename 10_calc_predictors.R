@@ -4,7 +4,7 @@ library(foreach)
 library(iterators)
 library(doParallel)
 
-registerDoParallel(n_cpus)
+registerDoParallel(3)
 
 library(rgeos)
 library(stringr)
@@ -16,7 +16,7 @@ reprocess <- TRUE
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
-sitecodes <- c('BBS', 'BCI')
+sitecodes <- c('UDZ')
 
 #imgtype <- 'normalized'
 imgtype <- 'raw'
