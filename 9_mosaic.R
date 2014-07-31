@@ -30,7 +30,7 @@ sitecodes <- 'UDZ'
 stopifnot(imgtype %in% c('normalized', 'raw'))
 
 input_dir <- file.path(prefix, 'Landsat', 'Cloud_Filled')
-output_dir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
+output_dir <- file.path(prefix, 'Landsat', 'Composites', 'Mosaics')
 
 notify('Starting mosaicking.')
 for (sitecode in sitecodes) {

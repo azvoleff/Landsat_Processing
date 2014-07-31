@@ -18,6 +18,7 @@ sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
 input_dir <- file.path(prefix, 'Landsat', 'Cloud_Filled')
+output_dir <- file.path(prefix, 'Landsat', 'Cloud_Filled_Normalized')
 
 # Function to auto-normalize an image list, or, if there is only one image in 
 # the image list, to copy the image with the base image extension.
@@ -31,14 +32,16 @@ auto_normalize_or_copy <- function(image_files) {
         base_mask <- stack(mask_file)
 
         # Copy the base image to a new file with the _base.tif extension
-        base_copy_filename <- paste0(file_path_sans_ext(image_files), 
-                                     '_normbase.tif')
+        base_copy_filename <- file.path(output_dir, 
+                                        paste0(file_path_sans_ext(basename(image_files)), 
+                                               '_normbase.tif'))
         base_img <- writeRaster(base_img, filename=base_copy_filename, 
                                 datatype='INT2S',
                                 overwrite=overwrite)
         base_img <- stack(image_files)
-        base_mask_copy_filename <- paste0(file_path_sans_ext(image_files), 
-                                          '_normbase_masks.tif')
+        base_mask_copy_filename <- file.path(output_dir,
+                                             paste0(file_path_sans_ext(basename(image_files)), 
+                                                    '_normbase_masks.tif'))
         base_mask <- writeRaster(base_mask, filename=base_mask_copy_filename, 
                                  datatype='INT2S',
                                  overwrite=overwrite)
@@ -60,7 +63,8 @@ for (sitecode in sitecodes) {
     }
     mask_stacks <- lapply(mask_files, stack)
 
-    output_files <- paste0(file_path_sans_ext(image_files), '_normalized.tif')
+    output_files <- file.path(output_dir,
+                              paste0(file_path_sans_ext(basename(image_files)), '_normalized.tif'))
 
     if (length(image_files) >= 1 & !reprocess) {
         image_files <- image_files[!file_test('-f', output_files)]
@@ -191,10 +195,12 @@ for (sitecode in sitecodes) {
                 match_mask <- stack(mask_file)
                 normed_image[match_mask[[2]] != 0] <- unnormed_image[match_mask[[2]] != 0]
 
-                output_normed_file <- paste0(file_path_sans_ext(image_file), 
-                                             '_normalized.tif')
-                output_normed_masks_file <- paste0(file_path_sans_ext(image_file), 
-                                                   '_normalized_masks.tif')
+                output_normed_file <- file.path(output_dir, 
+                                                paste0(file_path_sans_ext(basename(image_file)), 
+                                                       '_normalized.tif'))
+                output_normed_masks_file <- file.path(output_dir, 
+                                                      paste0(file_path_sans_ext(basename(image_file)), 
+                                                             '_normalized_masks.tif'))
                 writeRaster(normed_image, filename=output_normed_file, 
                             datatype='INT2S', 
                             overwrite=overwrite)

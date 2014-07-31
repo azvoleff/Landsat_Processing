@@ -16,16 +16,19 @@ reprocess <- TRUE
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
-sitecodes <- c('UDZ')
+window_size <- c(6, 6)
 
 #imgtype <- 'normalized'
 imgtype <- 'raw'
 
 stopifnot(imgtype %in% c('normalized', 'raw'))
 
+image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
+output_dir <- file.path(prefix, 'Landsat', 'Composites', 'Predictors')
+output_dir <- file.path(prefix, 'Landsat', 'Composites', 'Predictors_6x6glcm')
+
 image_files <- c()
 dem_files <- c()
-image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 slopeaspect_files <- c()
 for (sitecode in sitecodes) {
     if (imgtype == 'normalized') {
@@ -35,7 +38,9 @@ for (sitecode in sitecodes) {
     }
     these_image_files <- dir(image_basedir, pattern=pattern, full.names=TRUE)
 
-    output_files <- paste0(file_path_sans_ext(these_image_files), '_predictors.tif')
+    output_files <- file.path(output_dir,
+                              paste0(file_path_sans_ext(basename(these_image_files)), 
+                                     '_predictors.tif'))
     if (length(these_image_files) >= 1 & !reprocess) {
         these_image_files <- these_image_files[!file_test('-f', output_files)]
     }
@@ -69,8 +74,8 @@ foreach (image_file=iter(image_files), dem_file=iter(dem_files),
 
     dem <- raster(dem_file)
     slopeaspect <- stack(slopeaspect_file)
-    auto_calc_predictors(image_file, dem, slopeaspect, output_path=NULL, 
-                         cleartmp=TRUE, overwrite=overwrite)
+    auto_calc_predictors(image_file, dem, slopeaspect, output_path=output_dir, 
+                         cleartmp=TRUE, overwrite=overwrite, window=window_size)
     removeTmpFiles(h=0)
     unlink(raster_tmpdir)
 }
