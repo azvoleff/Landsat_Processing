@@ -18,6 +18,7 @@ sitecodes <- sites$Site.Name.Code
 
 n_grey <- 64
 window_size <- c(5, 5)
+shift <- list(c(0,1), c(1,1), c(1,0), c(1,-1))
 
 #imgtype <- 'normalized'
 imgtype <- 'raw'
@@ -26,7 +27,7 @@ stopifnot(imgtype %in% c('normalized', 'raw'))
 
 image_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Mosaics')
 #output_dir <- file.path(prefix, 'Landsat', 'Composites', 'Predictors')
-output_dir <- file.path(prefix, 'Landsat', 'Composites', 'Predictors_6x6glcm')
+output_dir <- file.path(prefix, 'Landsat', 'Composites', 'Predictors_5x5glcm')
 
 image_files <- c()
 dem_files <- c()
@@ -70,14 +71,15 @@ foreach (image_file=iter(image_files), dem_file=iter(dem_files),
          .packages=c('teamlucc', 'stringr')) %dopar% {
     raster_tmpdir <- file.path(temp, paste0('raster_',
                                paste(sample(c(letters, 0:9), 15), collapse='')))
+
     dir.create(raster_tmpdir)
     rasterOptions(tmpdir=raster_tmpdir)
-
     dem <- raster(dem_file)
     slopeaspect <- stack(slopeaspect_file)
     auto_calc_predictors(image_file, dem, slopeaspect, output_path=output_dir, 
-                         cleartmp=TRUE, overwrite=overwrite, 
-                         window=window_size, n_grey=n_grey)
+                         overwrite=overwrite, window=window_size, 
+                         n_grey=n_grey, shift=shift)
+
     removeTmpFiles(h=0)
     unlink(raster_tmpdir)
 }
