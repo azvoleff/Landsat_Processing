@@ -24,6 +24,8 @@ sitecodes <- c('PSH')
 
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
+model_dir <- file.path(prefix, 'Landsat', 'Composites', 'Models')
+out_dir <- file.path(prefix, 'Landsat', 'Composites', 'Predictions')
 image_files <- c()
 model_files <- c()
 zoi_files <- c()
@@ -42,7 +44,7 @@ for (sitecode in sitecodes) {
         next
     }
 
-    this_model_file <- file.path(image_basedir,
+    this_model_file <- file.path(model_dir,
                                  paste0(sitecode, '_rfmodel.RData'))
     if (!file_test('-f', this_model_file)) {
         next

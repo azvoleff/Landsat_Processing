@@ -4,7 +4,7 @@ library(foreach)
 library(iterators)
 library(doParallel)
 
-registerDoParallel(3)
+registerDoParallel(n_cpus)
 
 library(rgeos)
 library(stringr)
@@ -16,15 +16,16 @@ reprocess <- TRUE
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
-window_size <- c(6, 6)
+n_grey <- 64
+window_size <- c(5, 5)
 
 #imgtype <- 'normalized'
 imgtype <- 'raw'
 
 stopifnot(imgtype %in% c('normalized', 'raw'))
 
-image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
-output_dir <- file.path(prefix, 'Landsat', 'Composites', 'Predictors')
+image_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Mosaics')
+#output_dir <- file.path(prefix, 'Landsat', 'Composites', 'Predictors')
 output_dir <- file.path(prefix, 'Landsat', 'Composites', 'Predictors_6x6glcm')
 
 image_files <- c()
@@ -75,7 +76,8 @@ foreach (image_file=iter(image_files), dem_file=iter(dem_files),
     dem <- raster(dem_file)
     slopeaspect <- stack(slopeaspect_file)
     auto_calc_predictors(image_file, dem, slopeaspect, output_path=output_dir, 
-                         cleartmp=TRUE, overwrite=overwrite, window=window_size)
+                         cleartmp=TRUE, overwrite=overwrite, 
+                         window=window_size, n_grey=n_grey)
     removeTmpFiles(h=0)
     unlink(raster_tmpdir)
 }

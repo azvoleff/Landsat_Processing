@@ -25,7 +25,8 @@ sitecodes <- sites$Site.Name.Code
 sitecodes <- c('PSH')
 
 tr_polys_dir <- file.path(prefix, 'Landsat', 'LCLUC_Training')
-image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
+image_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Predictors_6x6glcm')
+out_dir <- file.path(prefix, 'Landsat', 'Composites', 'Models')
 notify('Starting training.')
 for (sitecode in sitecodes) {
     raster_tmpdir <- file.path(temp, paste0('raster_',
@@ -50,7 +51,7 @@ for (sitecode in sitecodes) {
 
     ##########################################################################
     # Read training data
-    tr_pixels_file <- file.path(image_basedir, paste0(sitecode, '_trainingpixels.RData'))
+    tr_pixels_file <- file.path(out_dir, paste0(sitecode, '_trainingpixels.RData'))
     if (file_test('-f', tr_pixels_file) & !redo_extract) {
         load(tr_pixels_file)
     } else {
@@ -109,7 +110,7 @@ for (sitecode in sitecodes) {
     ##########################################################################
     # Train classifiier
     if (redo_training) {
-        model_file <- file.path(image_basedir, paste0(sitecode, '_rfmodel.RData'))
+        model_file <- file.path(out_dir, paste0(sitecode, '_rfmodel.RData'))
         message('Training classifier...')
         if (length(tr_pixels) > 30000) {
             set.seed(0)
