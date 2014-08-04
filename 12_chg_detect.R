@@ -21,7 +21,7 @@ sitecodes <- c("BIF", "CAX", "COU", "CSN",
                "YAN", "YAS")
 
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
-image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
+image_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Predictions')
 out_dir <- file.path(prefix, 'Landsat', 'Composites', 'Change_Detection')
 
 classes_file_1s <- c()
