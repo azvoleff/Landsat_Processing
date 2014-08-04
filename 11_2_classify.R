@@ -20,12 +20,13 @@ predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi',
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
-sitecodes <- c('PSH')
+sitecodes <- c("BCI", "BBS", "UDZ", "NAK")
 
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
 model_dir <- file.path(prefix, 'Landsat', 'Composites', 'Models')
 out_dir <- file.path(prefix, 'Landsat', 'Composites', 'Predictions')
+
 image_files <- c()
 model_files <- c()
 zoi_files <- c()
@@ -100,7 +101,7 @@ num_res <- foreach (image_file=iter(image_files),
     })
     
     classes <- results$classes * image_mask
-    out_base <- file_path_sans_ext(file.path(image_basedir, image_file))
+    out_base <- file_path_sans_ext(file.path(out_dir, image_file))
     classes_file <- paste0(out_base, '_predclasses', extension(image_file))
     classes <- writeRaster(classes, filename=classes_file, 
                            datatype='INT2S', overwrite=overwrite)

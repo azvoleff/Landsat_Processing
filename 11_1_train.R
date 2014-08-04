@@ -21,12 +21,12 @@ predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi',
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
-
-sitecodes <- c('PSH')
+sitecodes <- c("BCI", "BBS", "UDZ", "NAK")
 
 tr_polys_dir <- file.path(prefix, 'Landsat', 'LCLUC_Training')
-image_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Predictors_6x6glcm')
+image_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Predictors_5x5glcm')
 out_dir <- file.path(prefix, 'Landsat', 'Composites', 'Models')
+
 notify('Starting training.')
 for (sitecode in sitecodes) {
     raster_tmpdir <- file.path(temp, paste0('raster_',

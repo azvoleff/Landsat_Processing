@@ -16,10 +16,12 @@ overwrite <- TRUE
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
-sitecodes <- c('PSH')
+sitecodes <- c("BCI", "BBS", "UDZ", "NAK")
 
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
+out_dir <- file.path(prefix, 'Landsat', 'Composites', 'Change_Detection')
+
 classes_file_1s <- c()
 classes_file_2s <- c()
 zoi_files <- c()
@@ -78,7 +80,7 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
     out_basename <- paste0(sitecode, '_', year_1, '-', year_2, 
                            '_chgdetect')
 
-    output_files <- dir(image_basedir,
+    output_files <- dir(out_dir,
                         pattern=paste0('_chgtraj.tif$'),
                         full.names=TRUE)
     if (length(output_files) >= 1 & !redo_chg_detection) {
@@ -111,7 +113,7 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
     t1_probs <- stack(probs_file_1)
     t2_probs <- stack(probs_file_2)
 
-    chg_dir_filename <- file.path(image_basedir,
+    chg_dir_filename <- file.path(out_dir,
                                   paste(out_basename, 'chgdir.tif', 
                                         sep='_'))
     chg_dir_image <- chg_dir(t1_probs, t2_probs)
@@ -119,7 +121,7 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
     writeRaster(chg_dir_image, filename=chg_dir_filename, 
                 overwrite=overwrite, datatype=dataType(chg_dir_image))
 
-    chg_mag_filename <- file.path(image_basedir,
+    chg_mag_filename <- file.path(out_dir,
                                   paste(out_basename, 'chgmag.tif', 
                                         sep='_'))
     chg_mag_image <- chg_mag(t1_probs, t2_probs)
@@ -133,13 +135,13 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
                              chg_threshold=chg_threshold,
                              classnames=classnames)
     
-    chg_traj_filename <- file.path(image_basedir,
-                                   paste(out_basename, 'chgtraj.tif', sep='_'))
+    chg_traj_filename <- file.path(out_dir, paste(out_basename, 'chgtraj.tif', 
+                                                  sep='_'))
     chg_traj_image <- chg_traj_out$traj * image_mask
     chg_traj_image <- writeRaster(chg_traj_image, filename=chg_traj_filename, 
                                   overwrite=overwrite, datatype='INT2S')
 
-    chg_traj_lut_filename <- file.path(image_basedir,
+    chg_traj_lut_filename <- file.path(out_dir,
                                        paste(out_basename, 'chgtraj_lut.csv', 
                                              sep='_'))
     write.csv(chg_traj_out$lut, file=chg_traj_lut_filename, row.names=FALSE)
@@ -159,8 +161,8 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
     chg_freqs <- chg_traj_out$lut
     chg_freqs$freq <- traj_freqs$count[match(chg_freqs$Code, traj_freqs$value)]
     chg_freqs <- chg_freqs[order(chg_freqs$t0_name, chg_freqs$t1_name),]
-    freqs_filename <- file.path(image_basedir,
-                                paste(out_basename, 'chgtraj_freqs.csv', sep='_'))
+    freqs_filename <- file.path(out_dir, paste(out_basename, 
+                                               'chgtraj_freqs.csv', sep='_'))
     write.csv(chg_freqs, file=freqs_filename, row.names=FALSE)
 
     removeTmpFiles(h=0)
