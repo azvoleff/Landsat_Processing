@@ -105,11 +105,10 @@ foreach (sitecode=iter(sitecodes_rep), base_dir=iter(base_dirs),
                               format(start_date, '%Y/%d/%m'), ' - ', 
                               format(end_date, '%Y/%d/%m'), ')')
 
-        out_name <- paste0(out_base, '.tif')
-
-        if (file_test('-f', out_name)) {
+        output_file <- paste0(out_base, ext)
+        if (file_test('-f', output_file)) {
             if (!reprocess) return()
-            if (!overwrite) stop(paste(out_name, 'already exists'))
+            if (!overwrite) stop(paste(output_file, 'already exists'))
         }
 
         # Set a separate raster temp dir for each worker, so that temp 
@@ -117,7 +116,7 @@ foreach (sitecode=iter(sitecodes_rep), base_dir=iter(base_dirs),
         rasterOptions(tmpdir=paste0(tempdir(), '_raster'))
 
         tryCatch(cf <- auto_cloud_fill(base_dir, wrspath, wrsrow, start_date, 
-                                       end_date, out_name=out_name, tc=tc, 
+                                       end_date, out_name=out_base, tc=tc, 
                                        sensors=sensors, n_cpus=1, 
                                        overwrite=overwrite, verbose=verbose, 
                                        DN_min=-100, DN_max=16000, 
