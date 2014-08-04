@@ -4,7 +4,8 @@ library(foreach)
 library(iterators)
 library(doParallel)
 
-registerDoParallel(n_cpus)
+cl <- makeCluster(n_cpus)
+registerDoParallel(cl)
 
 library(rgdal)
 library(stringr)
@@ -176,3 +177,5 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
 
 if (length(num_res) == 0) num_res <- 0
 notify(paste0('Finished change detection. Processed ', sum(num_res), ' images.'))
+
+stopCluster(cl)

@@ -4,7 +4,8 @@ library(foreach)
 library(iterators)
 library(doParallel)
 
-registerDoParallel(n_cpus)
+cl <- makeCluster(n_cpus)
+registerDoParallel(cl)
 
 library(rgdal)
 library(stringr)
@@ -143,3 +144,5 @@ num_res <- foreach (image_file=iter(image_files),
 
 if (length(num_res) == 0) num_res <- 0
 notify(paste0('Classification finished. Classified ', sum(num_res), ' images.'))
+
+stopCluster(cl)

@@ -3,7 +3,9 @@ source('0_settings.R')
 library(foreach)
 library(itertools)
 library(doParallel)
-registerDoParallel(n_cpus)
+
+cl <- makeCluster(n_cpus)
+registerDoParallel(cl)
 
 library(rgdal)
 library(raster)
@@ -165,3 +167,5 @@ retvals <- foreach (predclasses_file=iter(predclasses_files),
            width=img_width, height=img_height, dpi=img_dpi)
 
 }
+
+stopCluster(cl)

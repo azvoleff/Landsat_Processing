@@ -133,4 +133,3 @@ ggplot(class_freqs) +
     scale_y_continuous(labels=percent_format())
 ggsave(file.path(out_dir, 'class_frequencies_all_sites.png'),
        height=img_height, width=img_width, dpi=img_dpi)
-
