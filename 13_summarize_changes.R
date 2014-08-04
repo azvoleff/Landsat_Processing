@@ -15,9 +15,6 @@ img_width <- 10
 img_height <- 7.5
 img_dpi <- 300
 
-sites <- read.csv('Site_Code_Key.csv')
-sitecodes <- sites$Site.Name.Code
-
 image_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Change_Detection')
 out_dir <- image_basedir
 stopifnot(file_test('-d', out_dir))

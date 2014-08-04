@@ -1,4 +1,4 @@
-source('0_settings.R')
+ource('0_settings.R')
 
 library(foreach)
 library(itertools)
@@ -18,9 +18,6 @@ img_height <- 7
 img_dpi <- 300
 
 overwrite <- TRUE
-
-sites <- read.csv('Site_Code_Key.csv')
-sitecodes <- sites$Site.Name.Code
 
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 
