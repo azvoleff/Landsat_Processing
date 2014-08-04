@@ -20,7 +20,9 @@ predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi',
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
-sitecodes <- c("BCI", "BBS", "UDZ", "NAK")
+sitecodes <- c("BIF", "CAX", "COU", "CSN",
+               "MAS", "PSH", "RNF", "VB",
+               "YAN", "YAS")
 
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 image_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Predictors_5x5glcm')
