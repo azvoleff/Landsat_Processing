@@ -15,12 +15,10 @@ img_width <- 10
 img_height <- 7.5
 img_dpi <- 300
 
-overwrite <- TRUE
-
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
-image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
+image_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Change_Detection')
 out_dir <- image_basedir
 stopifnot(file_test('-d', out_dir))
 
@@ -50,7 +48,7 @@ class_names_abbrev <- c('Urban',
                         'Unk')
 
 traj_freqs_files <- dir(image_basedir,
-                   pattern='^[a-zA-Z]*_[0-9]{4}-[0-9]{4}_chgdetect_chgtraj_freqs.csv$')
+                        pattern='^[a-zA-Z]*_[0-9]{4}-[0-9]{4}_chgdetect_chgtraj_freqs.csv$')
 traj_freqs <- foreach(traj_freqs_file=iter(traj_freqs_files),
                  .packages=c('ggplot2', 'dplyr'),
                  .combine=rbind, .inorder=FALSE) %do% {
@@ -136,6 +134,6 @@ ggplot(class_freqs) +
           legend.key.size=unit(1.5, "line"),
           panel.grid.major=element_blank()) +
     scale_y_continuous(labels=percent_format())
-ggsave('class_frequencies_all_sites.png',
+ggsave(file.path(out_dir, 'class_frequencies_all_sites.png'),
        height=img_height, width=img_width, dpi=img_dpi)
 
