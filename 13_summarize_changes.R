@@ -15,9 +15,7 @@ img_width <- 10
 img_height <- 7.5
 img_dpi <- 300
 
-image_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Change_Detection')
-out_dir <- image_basedir
-stopifnot(file_test('-d', out_dir))
+traj_freqs_dir <- file.path(prefix, 'Landsat', 'Composites', 'Change_Detection')
 
 class_names_pretty <- c('Urban/built',
                         'Agriculture',
@@ -44,7 +42,7 @@ class_names_abbrev <- c('Urban',
                         'Water',
                         'Unk')
 
-traj_freqs_files <- dir(image_basedir,
+traj_freqs_files <- dir(traj_freqs_dir,
                         pattern='^[a-zA-Z]*_[0-9]{4}-[0-9]{4}_chgdetect_chgtraj_freqs.csv$')
 traj_freqs <- foreach(traj_freqs_file=iter(traj_freqs_files),
                  .packages=c('ggplot2', 'dplyr'),
@@ -53,7 +51,7 @@ traj_freqs <- foreach(traj_freqs_file=iter(traj_freqs_files),
     time_string <- str_extract(traj_freqs_file, '[0-9]{4}-[0-9]{4}')
     t0 <- as.numeric(gsub('-', '', str_extract(time_string, '[0-9]{4}-')))
     t1 <- as.numeric(gsub('-', '', str_extract(time_string, '-[0-9]{4}')))
-    traj_freqs <- read.csv(file.path(image_basedir, traj_freqs_file))
+    traj_freqs <- read.csv(file.path(traj_freqs_dir, traj_freqs_file))
     traj_freqs$t0_name <- ordered(traj_freqs$t0_name, levels=class_names_R, 
                                   labels=class_names_pretty)
     traj_freqs$t1_name <- ordered(traj_freqs$t1_name, levels=class_names_R, 
@@ -71,12 +69,13 @@ traj_freqs <- foreach(traj_freqs_file=iter(traj_freqs_files),
     return(traj_freqs)
 }
 
-class_freqs_files <- dir(image_basedir,
+preds_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Predictions')
+class_freqs_files <- dir(preds_basedir,
                          pattern='^[a-zA-Z]*_mosaic_[0-9]{4}_predictors_predclasses_classfreqs.csv$')
 class_freqs <- foreach(class_freqs_file=iter(class_freqs_files),
                        .packages=c('ggplot2', 'dplyr'),
                        .combine=rbind, .inorder=FALSE) %do% {
-    class_freqs <- read.csv(file.path(image_basedir, class_freqs_file), stringsAsFactors=FALSE)
+    class_freqs <- read.csv(file.path(preds_basedir, class_freqs_file), stringsAsFactors=FALSE)
     class_freqs$name[is.na(class_freqs$code)] <- 'Unknown'
     class_freqs$code[class_freqs$name == 'Unknown'] <- '-1'
     # Ignore areas outside ZOI (areas coded 99)
@@ -109,7 +108,7 @@ for (sitecode in unique(traj_freqs$sitecode)) {
               legend.key.size=unit(1.5, "line"),
               panel.grid.major=element_blank()) +
         facet_wrap(~ t0)
-    ggsave(file.path(out_dir, paste('transitions', sitecode, 'colorplot.png', sep='_')),
+    ggsave(file.path(traj_freqs_dir, paste('transitions', sitecode, 'colorplot.png', sep='_')),
            height=img_height, width=img_width, dpi=img_dpi)
 }
 
@@ -131,5 +130,5 @@ ggplot(class_freqs) +
           legend.key.size=unit(1.5, "line"),
           panel.grid.major=element_blank()) +
     scale_y_continuous(labels=percent_format())
-ggsave(file.path(out_dir, 'class_frequencies_all_sites.png'),
+ggsave(file.path(preds_basedir, 'class_frequencies_all_sites.png'),
        height=img_height, width=img_width, dpi=img_dpi)
