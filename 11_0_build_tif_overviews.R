@@ -1,6 +1,6 @@
 source('0_settings.R')
 
-image_dir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
+image_dir <- file.path(prefix, 'Landsat', 'Composites', 'Mosaics')
 tiff_files <- dir(image_dir, pattern="*.tif$", full.names=TRUE)
 
 verbose <- TRUE

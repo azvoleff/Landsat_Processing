@@ -5,7 +5,7 @@ library(tools)
 library(dplyr)
 library(reshape2)
 
-training_pixel_files <- dir(file.path(prefix, 'Landsat', 'LCLUC_Classifications'),
+training_pixel_files <- dir(file.path(prefix, 'Landsat', 'Composites', 'Models'),
                             pattern='trainingpixels.RData$', full.names=TRUE)
 
 out_file <- 'training_pixel_summary.txt'

@@ -22,7 +22,7 @@ sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
-image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
+image_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Mosaics')
 
 reprocess <- FALSE
 imgtype <- 'raw'
