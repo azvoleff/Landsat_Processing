@@ -21,7 +21,7 @@ overwrite <- TRUE
 
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 
-image_basedir <- file.path(prefix, 'Landsat', 'LCLUC_Classifications')
+image_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Predictions')
 out_dir <- image_basedir
 
 stopifnot(file_test('-d', out_dir))
