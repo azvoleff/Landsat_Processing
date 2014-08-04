@@ -30,7 +30,7 @@ rasterOptions(tmpdir=temp)
 if (Sys.info()[4] == 'CI-TEAM') {
     n_cpus <- 6
 } else if (Sys.info()[4] == 'vertica1.team.sdsc.edu') {
-    n_cpus <- 12
+    n_cpus <- 18
 } else {
     n_cpus <- 3
 }
