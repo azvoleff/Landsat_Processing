@@ -132,13 +132,26 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
     chg_mag_image <- chg_mag_image * image_mask
     writeRaster(chg_mag_image, filename=chg_mag_filename, 
                 overwrite=overwrite, datatype=dataType(chg_mag_image))
-   
-    chg_threshold <- threshold(chg_mag_image, by=.025)
+
+    # Load ZOI for use in masking images
+    load(zoi_file)
+    zoi <- spTransform(zoi, CRS(proj4string(chg_traj_image)))
+    zoi_rast <- rasterize(zoi, chg_traj_image, 1, silent=TRUE)
+
+    chg_mag_image_crop <- crop(chg_mag_image, zoi)
+    chg_mag_image_crop <- mask(chg_mag_image_crop, zoi)
+    chg_threshold <- threshold(chg_mag_image_crop, by=.025)
+    chg_threshold_filename <- file.path(out_dir,
+                                        paste(out_basename, 'threshold.txt', 
+                                              sep='_'))
+    write.csv(data.frame(sitecode=sitecode, year_1=year_1, year_2=year_2, 
+                         threshold=chg_threshold), file=chg_threshold_filename, 
+              row.names=FALSE)
     
     chg_traj_out <- chg_traj(t1_classes, chg_mag_image, chg_dir_image, 
                              chg_threshold=chg_threshold,
                              classnames=classnames)
-    
+
     chg_traj_filename <- file.path(out_dir, paste(out_basename, 'chgtraj.tif', 
                                                   sep='_'))
     chg_traj_image <- chg_traj_out$traj * image_mask
@@ -150,16 +163,11 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
                                              sep='_'))
     write.csv(chg_traj_out$lut, file=chg_traj_lut_filename, row.names=FALSE)
 
-    # Calculate change frequencies, masking out area outside of ZOI
-    load(zoi_file)
-    zoi <- spTransform(zoi, CRS(proj4string(chg_traj_image)))
-    zoi <- rasterize(zoi, chg_traj_image, 1, silent=TRUE)
-
     # Set masked areas to 99 so they can be differentiated. Don't use mask as 
     # it has a bug where it doesn't set NA areas in the image to the 
     # updatevalue
     chg_traj_image_masked <- chg_traj_image
-    chg_traj_image_masked[is.na(zoi)] <- 99
+    chg_traj_image_masked[is.na(zoi_rast)] <- 99
 
     traj_freqs <- data.frame(freq(chg_traj_image_masked))
     chg_freqs <- chg_traj_out$lut

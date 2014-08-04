@@ -4,6 +4,7 @@ library(foreach)
 library(itertools)
 library(doParallel)
 
+n_cpus <- 10
 cl <- makeCluster(n_cpus)
 registerDoParallel(cl)
 
@@ -128,8 +129,6 @@ retvals <- foreach (predclasses_file=iter(predclasses_files),
                     .packages=c('stringr', 'tools', 'raster', 'plyr', 'grid', 
                                 'rgdal', 'ggplot2')) %dopar% {
     sitecode <- str_extract(basename(predclasses_file), '^[a-zA-Z]*')
-
-    if (sitecode != "PSH") return(data.frame())
 
     year <- str_extract(predclasses_file, '[0-9]{4}')
     classes_rast <- stack(predclasses_file)

@@ -3,7 +3,9 @@ ource('0_settings.R')
 library(foreach)
 library(itertools)
 library(doParallel)
-registerDoParallel(n_cpus)
+
+cl <- makeCluster(n_cpus)
+registerDoParallel(cl)
 
 library(rgdal)
 library(raster)
@@ -177,7 +179,6 @@ retvals <- foreach (chgtraj_file=iter(chgtraj_files),
                                     label=traj_codes$trans_name),
                  legend_title="Transition")
 
-
     # Assign codes to trajs that are in this image. Assign codes to the 
     # others just so the plot code doesn't choke, and so these trajs remain 
     # in the legend, even if they do not appear in the image.
@@ -193,5 +194,6 @@ retvals <- foreach (chgtraj_file=iter(chgtraj_files),
     plot_trajs(chgtraj_rast, zoi, trajs, title_string)
     ggsave(paste0(file_path_sans_ext(chgtraj_file), '_browse.png'), 
            width=img_width, height=img_height, dpi=img_dpi)
-
 }
+
+stopCluster(cl)
