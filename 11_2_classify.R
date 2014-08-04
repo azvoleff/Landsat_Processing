@@ -108,6 +108,13 @@ num_res <- foreach (image_file=iter(image_files),
     classes_file <- paste0(out_base, '_predclasses', extension(image_file))
     classes <- writeRaster(classes, filename=classes_file, 
                            datatype='INT2S', overwrite=overwrite)
+    
+    # Copy masks file so it is available with output predclasses images
+    orig_masks_file <- file.path(image_basedir, 
+                                 paste0(file_path_sans_ext(image_file), 
+                                    '_masks', extension(image_file)))
+    new_masks_file <- paste0(out_base, '_masks', extension(image_file))
+    file.copy(orig_masks_file, new_masks_file)
 
     probs <- round(results$probs * 100)
     probs <- probs * image_mask
