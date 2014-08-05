@@ -135,8 +135,8 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
 
     # Load ZOI for use in masking images
     load(zoi_file)
-    zoi <- spTransform(zoi, CRS(proj4string(chg_traj_image)))
-    zoi_rast <- rasterize(zoi, chg_traj_image, 1, silent=TRUE)
+    zoi <- spTransform(zoi, CRS(proj4string(chg_mag_image)))
+    zoi_rast <- rasterize(zoi, chg_mag_image, 1, silent=TRUE)
 
     chg_mag_image_crop <- crop(chg_mag_image, zoi)
     chg_mag_image_crop <- mask(chg_mag_image_crop, zoi)
