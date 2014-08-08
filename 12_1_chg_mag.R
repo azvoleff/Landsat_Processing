@@ -28,7 +28,6 @@ out_dir <- file.path(prefix, 'Landsat', 'Composites', 'Change_Detection')
 
 classes_file_1s <- c()
 classes_file_2s <- c()
-zoi_files <- c()
 for (sitecode in sitecodes) {
     these_classes_files <- dir(image_basedir,
                                pattern=paste0('^', sitecode, 
@@ -43,29 +42,20 @@ for (sitecode in sitecodes) {
         next
     }
 
-    this_zoi_file <- dir(zoi_folder,
-                         pattern=paste0('^ZOI_', sitecode, '_[0-9]{4}.RData'), 
-                         full.names=TRUE)
-    stopifnot(length(this_zoi_file) == 1)
-    
     # Setup pairs of image files
     these_classes_file_1s <- these_classes_files[1:(length(these_classes_files) - 1)]
     these_classes_file_2s <- these_classes_files[2:length(these_classes_files)]
 
     classes_file_1s <- c(classes_file_1s, these_classes_file_1s)
     classes_file_2s <- c(classes_file_2s, these_classes_file_2s)
-    
-    zoi_files <- c(zoi_files, rep(this_zoi_file, length(these_classes_files) - 1))
 }
 stopifnot(length(classes_file_1s) == length(classes_file_2s))
-stopifnot(length(classes_file_1s) == length(zoi_files))
 
-# Run change detection on each pair
-notify(paste0('Starting change detection. ',
+# Run chg magnitude/direction calculation on each pair
+notify(paste0('Starting chg magnitude/direction calculation. ',
               length(classes_file_1s), ' image sets to process.'))
 num_res <- foreach (classes_file_1=iter(classes_file_1s), 
                     classes_file_2=iter(classes_file_2s),
-                    zoi_file=iter(zoi_files),
                     .packages=c('teamlucc', 'notifyR', 'stringr', 'rgdal'),
                     .combine=c, .inorder=FALSE) %dopar% {
     raster_tmpdir <- file.path(temp, paste0('raster_',
@@ -84,8 +74,7 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
     out_basename <- paste0(sitecode, '_', year_1, '-', year_2, 
                            '_chgdetect')
 
-    output_files <- dir(out_dir,
-                        pattern=paste0('_chgtraj.tif$'),
+    output_files <- dir(out_dir, pattern=paste0(out_basename, '_chgdir.tif'), 
                         full.names=TRUE)
     if (length(output_files) >= 1 & !redo_chg_detection) {
         return()
@@ -133,50 +122,6 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
     writeRaster(chg_mag_image, filename=chg_mag_filename, 
                 overwrite=overwrite, datatype=dataType(chg_mag_image))
 
-    # Load ZOI for use in masking images
-    load(zoi_file)
-    zoi <- spTransform(zoi, CRS(proj4string(chg_mag_image)))
-    zoi_rast <- rasterize(zoi, chg_mag_image, 1, silent=TRUE)
-
-    chg_mag_image_crop <- crop(chg_mag_image, zoi)
-    chg_mag_image_crop <- mask(chg_mag_image_crop, zoi)
-    chg_threshold <- threshold(chg_mag_image_crop, by=.025)
-    chg_threshold_filename <- file.path(out_dir,
-                                        paste(out_basename, 'threshold.txt', 
-                                              sep='_'))
-    write.csv(data.frame(sitecode=sitecode, year_1=year_1, year_2=year_2, 
-                         threshold=chg_threshold), file=chg_threshold_filename, 
-              row.names=FALSE)
-    
-    chg_traj_out <- chg_traj(t1_classes, chg_mag_image, chg_dir_image, 
-                             chg_threshold=chg_threshold,
-                             classnames=classnames)
-
-    chg_traj_filename <- file.path(out_dir, paste(out_basename, 'chgtraj.tif', 
-                                                  sep='_'))
-    chg_traj_image <- chg_traj_out$traj * image_mask
-    chg_traj_image <- writeRaster(chg_traj_image, filename=chg_traj_filename, 
-                                  overwrite=overwrite, datatype='INT2S')
-
-    chg_traj_lut_filename <- file.path(out_dir,
-                                       paste(out_basename, 'chgtraj_lut.csv', 
-                                             sep='_'))
-    write.csv(chg_traj_out$lut, file=chg_traj_lut_filename, row.names=FALSE)
-
-    # Set masked areas to 99 so they can be differentiated. Don't use mask as 
-    # it has a bug where it doesn't set NA areas in the image to the 
-    # updatevalue
-    chg_traj_image_masked <- chg_traj_image
-    chg_traj_image_masked[is.na(zoi_rast)] <- 99
-
-    traj_freqs <- data.frame(freq(chg_traj_image_masked))
-    chg_freqs <- chg_traj_out$lut
-    chg_freqs$freq <- traj_freqs$count[match(chg_freqs$Code, traj_freqs$value)]
-    chg_freqs <- chg_freqs[order(chg_freqs$t0_name, chg_freqs$t1_name),]
-    freqs_filename <- file.path(out_dir, paste(out_basename, 
-                                               'chgtraj_freqs.csv', sep='_'))
-    write.csv(chg_freqs, file=freqs_filename, row.names=FALSE)
-
     removeTmpFiles(h=0)
     unlink(raster_tmpdir)
 
@@ -184,6 +129,6 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
 }
 
 if (length(num_res) == 0) num_res <- 0
-notify(paste0('Finished change detection. Processed ', sum(num_res), ' images.'))
+notify(paste0('Finished chg magnitude/direction calculation. Processed ', sum(num_res), ' images.'))
 
 stopCluster(cl)
