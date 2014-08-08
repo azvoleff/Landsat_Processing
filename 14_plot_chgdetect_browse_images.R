@@ -1,4 +1,4 @@
-ource('0_settings.R')
+source('0_settings.R')
 
 library(foreach)
 library(itertools)

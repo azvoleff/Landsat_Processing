@@ -25,17 +25,18 @@ sitecodes <- c("BIF", "CAX", "COU", "CSN",
                "UDZ", "NAK")
 
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
-in_dir <- file.path(prefix, 'Landsat', 'Composites', 'Change_Detection')
+predictions_dir <- file.path(prefix, 'Landsat', 'Composites', 'Predictions')
+chgdetect_dir <- file.path(prefix, 'Landsat', 'Composites', 'Change_Detection')
 out_dir <- file.path(prefix, 'Landsat', 'Composites', 'Change_Detection')
 
-chgtraj_files <- c()
+chgmag_files <- c()
 zoi_files <- c()
 for (sitecode in sitecodes) {
-    these_chgtraj_files <- dir(in_dir,
-                               pattern=paste0('^', sitecode, '_[0-9]{4}-[0-9]{4}_chgdetect_chgtraj.tif$'),
+    these_chgmag_files <- dir(chgdetect_dir,
+                               pattern=paste0('^', sitecode, '_[0-9]{4}-[0-9]{4}_chgdetect_chgmag.tif$'),
                                full.names=TRUE)
 
-    if (length(these_chgtraj_files) == 0) {
+    if (length(these_chgmag_files) == 0) {
         next
     }
     this_zoi_file <- dir(zoi_folder,
@@ -43,15 +44,15 @@ for (sitecode in sitecodes) {
                          full.names=TRUE)
     stopifnot(length(this_zoi_file) == 1)
     
-    chgtraj_files <- c(chgtraj_files, these_chgtraj_files)
+    chgmag_files <- c(chgmag_files, these_chgmag_files)
     
-    zoi_files <- c(zoi_files, rep(this_zoi_file, length(these_chgtraj_files)))
+    zoi_files <- c(zoi_files, rep(this_zoi_file, length(these_chgmag_files)))
 }
-stopifnot(length(chgtraj_files) == length(zoi_files))
+stopifnot(length(chgmag_files) == length(zoi_files))
 
 # Run change detection on each pair
-notify(paste0('Starting change detection. ', length(chgtraj_files), ' image sets to process.'))
-num_res <- foreach (chgtraj_file=iter(chgtraj_files), zoi_file=iter(zoi_files),
+notify(paste0('Starting change detection. ', length(chgmag_files), ' image sets to process.'))
+num_res <- foreach (chgmag_file=iter(chgmag_files), zoi_file=iter(zoi_files),
                     .packages=c('teamlucc', 'notifyR', 'stringr', 'rgdal'),
                     .combine=c, .inorder=FALSE) %dopar% {
     raster_tmpdir <- file.path(temp, paste0('raster_',
@@ -59,10 +60,10 @@ num_res <- foreach (chgtraj_file=iter(chgtraj_files), zoi_file=iter(zoi_files),
     dir.create(raster_tmpdir)
     rasterOptions(tmpdir=raster_tmpdir)
 
-    sitecode <- str_extract(basename(chgtraj_file), '^[a-zA-Z]*')
+    sitecode <- str_extract(basename(chgmag_file), '^[a-zA-Z]*')
 
-    year_1 <- as.numeric(gsub('[_-]','', str_extract(chgtraj_file, '_[0-9]{4}-')))
-    year_2 <- as.numeric(gsub('[_-]','', str_extract(chgtraj_file, '-[0-9]{4}_')))
+    year_1 <- as.numeric(gsub('[_-]','', str_extract(chgmag_file, '_[0-9]{4}-')))
+    year_2 <- as.numeric(gsub('[_-]','', str_extract(chgmag_file, '-[0-9]{4}_')))
     stopifnot(year_1 < year_2)
 
     out_basename <- paste0(sitecode, '_', year_1, '-', year_2, '_chgdetect')
@@ -73,25 +74,29 @@ num_res <- foreach (chgtraj_file=iter(chgtraj_files), zoi_file=iter(zoi_files),
         return()
     }
 
-    chg_mag_filename <- file.path(out_dir,
-                                  paste(out_basename, 'chgmag.tif', 
-                                        sep='_'))
-    chg_mag_image <- raster(chg_mag_filename)
+    classes_1_filename <- dir(predictions_dir,
+                              pattern=paste0(sitecode, '_mosaic_', year_1,
+                                             '_predictors_predclasses.tif'),
+                              full.names=TRUE)
+    stopifnot(length(classes_1_filename) == 1)
+    classes_1_image <- stack(classes_1_filename)
 
-    chg_dir_filename <- file.path(out_dir,
+    chgmag_image <- raster(chgmag_file)
+
+    chgdir_filename <- file.path(out_dir,
                                   paste(out_basename, 'chgdir.tif', 
                                         sep='_'))
-    chg_dir_image <- raster(chg_dir_filename)
+    chgdir_image <- raster(chgdir_filename)
 
     # Load ZOI for use in masking images
     load(zoi_file)
-    zoi <- spTransform(zoi, CRS(proj4string(chg_mag_image)))
-    zoi_rast <- rasterize(zoi, chg_mag_image, 1, silent=TRUE)
+    zoi <- spTransform(zoi, CRS(proj4string(chgmag_image)))
+    zoi_rast <- rasterize(zoi, chgmag_image, 1, silent=TRUE)
 
 
-    chg_mag_image_crop <- crop(chg_mag_image, zoi)
-    chg_mag_image_crop <- mask(chg_mag_image_crop, zoi)
-    chg_threshold <- threshold(chg_mag_image_crop, by=.025)
+    chgmag_image_crop <- crop(chgmag_image, zoi)
+    chgmag_image_crop <- mask(chgmag_image_crop, zoi)
+    chg_threshold <- threshold(chgmag_image_crop, by=.025)
 
     chg_threshold_filename <- file.path(out_dir,
                                         paste(out_basename, 'threshold.txt', 
@@ -102,14 +107,20 @@ num_res <- foreach (chgtraj_file=iter(chgtraj_files), zoi_file=iter(zoi_files),
 
     if (chg_threshold < min_chg_threshold) chg_threshold <- min_chg_threshold
     
-    chg_traj_out <- chg_traj(t1_classes, chg_mag_image, chg_dir_image, 
+    key_file_1 <- gsub('predclasses.tif', 'classeskey.csv', classes_1_filename)
+    class_key <- read.csv(key_file_1)
+    classnames <- class_key$class
+
+    chg_traj_out <- chg_traj(classes_1_image, chgmag_image, chgdir_image, 
                              chg_threshold=chg_threshold,
                              classnames=classnames)
 
     chg_traj_filename <- file.path(out_dir, paste(out_basename, 'chgtraj.tif', 
                                                   sep='_'))
-    chg_traj_image <- chg_traj_out$traj * image_mask
-    chg_traj_image <- writeRaster(chg_traj_image, filename=chg_traj_filename, 
+    # Recheck - but below masking line should no longer be needed
+    #chg_traj_image <- chg_traj_out$traj * image_mask
+    chg_traj_image <- writeRaster(chg_traj_out$traj, 
+                                  filename=chg_traj_filename, 
                                   overwrite=overwrite, datatype='INT2S')
 
     chg_traj_lut_filename <- file.path(out_dir,

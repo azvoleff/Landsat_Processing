@@ -4,7 +4,6 @@ library(foreach)
 library(itertools)
 library(doParallel)
 
-n_cpus <- 10
 cl <- makeCluster(n_cpus)
 registerDoParallel(cl)
 
@@ -104,8 +103,10 @@ plot_classes <- function(x, aoi, classes, title_string='', size_scale=1,
     aoi_points <- fortify(aoi_tr, region="id")
     aoi_df <- join(aoi_points, aoi_tr@data, by="id")
 
-    dat <- sampleRegular(x, maxpixels, asRaster=TRUE)
-    dat <- as.data.frame(dat, xy=TRUE)
+    if (ncell(x) > maxpixels) {
+        x <- sampleRegular(x, maxpixels, asRaster=TRUE, useGDAL=TRUE)
+    }
+    dat <- as.data.frame(x, xy=TRUE)
     names(dat)[3] <- 'value'
     dat$value <- ordered(dat$value, levels=classes$code)
 
@@ -132,6 +133,8 @@ retvals <- foreach (predclasses_file=iter(predclasses_files),
 
     year <- str_extract(predclasses_file, '[0-9]{4}')
     classes_rast <- stack(predclasses_file)
+    classes_rast <- sampleRegular(classes_rast, 1e6, asRaster=TRUE, 
+                                  useGDAL=TRUE)
 
     # Mask out area outside of ZOI
     zoi_file <- dir(zoi_folder, pattern=paste0('^ZOI_', sitecode, '_[0-9]{4}.RData'), 
@@ -162,6 +165,7 @@ retvals <- foreach (predclasses_file=iter(predclasses_files),
 
     title_string <- paste(sitecode, year, sep=' - ')
     plot_classes(classes_rast, zoi, classes, title_string)
+
     ggsave(paste0(file_path_sans_ext(predclasses_file), '_browse.png'), 
            width=img_width, height=img_height, dpi=img_dpi)
 
