@@ -114,6 +114,8 @@ num_res <- foreach (chgmag_file=iter(chgmag_files), zoi_file=iter(zoi_files),
     chg_traj_out <- chg_traj(classes_1_image, chgmag_image, chgdir_image, 
                              chg_threshold=chg_threshold,
                              classnames=classnames)
+    lut <- traj_lut(t0_preds$codes$code, t0_preds$codes$class)
+    chg_traj_out <- chg_traj(lut, t0_t1_chgmag, t0_t1_chgdir, .5)
 
     chg_traj_filename <- file.path(out_dir, paste(out_basename, 'chgtraj.tif', 
                                                   sep='_'))
