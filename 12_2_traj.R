@@ -111,24 +111,23 @@ num_res <- foreach (chgmag_file=iter(chgmag_files), zoi_file=iter(zoi_files),
     class_key <- read.csv(key_file_1)
     classnames <- class_key$class
 
-    chg_traj_out <- chg_traj(classes_1_image, chgmag_image, chgdir_image, 
+    chg_traj_out <- chg_traj(chgmag_image, chgdir_image, 
                              chg_threshold=chg_threshold,
                              classnames=classnames)
-    lut <- traj_lut(t0_preds$codes$code, t0_preds$codes$class)
-    chg_traj_out <- chg_traj(lut, t0_t1_chgmag, t0_t1_chgdir, .5)
 
     chg_traj_filename <- file.path(out_dir, paste(out_basename, 'chgtraj.tif', 
                                                   sep='_'))
     # Recheck - but below masking line should no longer be needed
     #chg_traj_image <- chg_traj_out$traj * image_mask
-    chg_traj_image <- writeRaster(chg_traj_out$traj, 
+    chg_traj_image <- writeRaster(chg_traj_out, 
                                   filename=chg_traj_filename, 
                                   overwrite=overwrite, datatype='INT2S')
 
     chg_traj_lut_filename <- file.path(out_dir,
                                        paste(out_basename, 'chgtraj_lut.csv', 
                                              sep='_'))
-    write.csv(chg_traj_out$lut, file=chg_traj_lut_filename, row.names=FALSE)
+    lut <- traj_lut(class_key$code, class_key$class)
+    write.csv(lut, file=chg_traj_lut_filename, row.names=FALSE)
 
     # Set masked areas to 99 so they can be differentiated. Don't use mask as 
     # it has a bug where it doesn't set NA areas in the image to the 
@@ -137,7 +136,7 @@ num_res <- foreach (chgmag_file=iter(chgmag_files), zoi_file=iter(zoi_files),
     chg_traj_image_masked[is.na(zoi_rast)] <- 99
 
     traj_freqs <- data.frame(freq(chg_traj_image_masked))
-    chg_freqs <- chg_traj_out$lut
+    chg_freqs <- lut
     chg_freqs$freq <- traj_freqs$count[match(chg_freqs$Code, traj_freqs$value)]
     chg_freqs <- chg_freqs[order(chg_freqs$t0_name, chg_freqs$t1_name),]
     freqs_filename <- file.path(out_dir, paste(out_basename, 
