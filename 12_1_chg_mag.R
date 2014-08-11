@@ -96,7 +96,7 @@ num_res <- foreach (classes_file_1=iter(classes_file_1s),
     mask_1 <- raster(mask_file_1, layer=2)
     mask_2 <- raster(mask_file_2, layer=2)
     image_mask <- overlay(mask_1, mask_2, fun=function(msk1, msk2) {
-        ret <- !is.na(msk1)
+        ret <- !is.na(msk1) & !is.na(msk2)
         ret[(msk1 == 2) | (msk1 == 4) | (is.na(msk1)) | (msk1 == 255)] <- NA
         ret[(msk2 == 2) | (msk2 == 4) | (is.na(msk2)) | (msk2 == 255)] <- NA
         return(ret)

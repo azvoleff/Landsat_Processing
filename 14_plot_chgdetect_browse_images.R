@@ -95,7 +95,7 @@ chgtraj_lut_file <- chgtraj_lut_files[1]
 #' @param title_string the plot title
 #' @param size_scale a number used to scale the size of the plot text
 #' @param maxpixels the maximum number of pixels from x to use in plotting
-plot_classes <- function(x, aoi, classes, title_string='', size_scale=1, 
+plot_trajs <- function(x, aoi, classes, title_string='', size_scale=1, 
                          maxpixels=1e6, legend_title="Cover") {
     aoi_tr <- spTransform(aoi, CRS(proj4string(x)))
     aoi_tr$ID <- row.names(aoi_tr)
@@ -106,8 +106,10 @@ plot_classes <- function(x, aoi, classes, title_string='', size_scale=1,
     aoi_points <- fortify(aoi_tr, region="id")
     aoi_df <- join(aoi_points, aoi_tr@data, by="id")
 
-    dat <- sampleRegular(x, maxpixels, asRaster=TRUE)
-    dat <- as.data.frame(dat, xy=TRUE)
+    if (ncell(x) > maxpixels) {
+        x <- sampleRegular(x, maxpixels, asRaster=TRUE, useGDAL=TRUE)
+    }
+    dat <- as.data.frame(x, xy=TRUE)
     names(dat)[3] <- 'value'
     dat$value <- ordered(dat$value, levels=classes$code)
 
@@ -135,6 +137,20 @@ plot_classes <- function(x, aoi, classes, title_string='', size_scale=1,
         ggtitle(title_string)
 }
 
+chgmag_file <- gsub("chgtraj", "chgmag", chgtraj_file)
+chgmag_image <- raster(chgmag_file)
+chgdir_file <- gsub("chgtraj", "chgdir", chgtraj_file)
+chgdir_image <- raster(chgdir_file)
+classes_1_probs_file <- "H:/Data/Landsat/Composites/Predictions/BIF_mosaic_1990_predictors_predprobs.tif"
+classes_1_probs_image <- stack(classes_1_probs_file)
+classes_2_probs_file <- "H:/Data/Landsat/Composites/Predictions/BIF_mosaic_1995_predictors_predprobs.tif"
+classes_2_probs_image <- stack(classes_2_probs_file)
+
+img1 <- as.matrix(c(.2, .4, .5), ncol=1, byrow=TRUE)
+img2 <- as.matrix(c(.3, .1, .6), nrow=1, byrow=TRUE)
+calc_chg_dir(as.matrix(c(.2, .4, .5), nrow=1, byrow=TRUE),
+             as.matrix(c(.3, .1, .6), nrow=1, byrow=TRUE))
+
 retvals <- foreach (chgtraj_file=iter(chgtraj_files), 
                     chgtraj_lut_file=iter(chgtraj_lut_files),
                     .packages=c('stringr', 'tools', 'raster', 'plyr', 'grid', 
@@ -142,6 +158,8 @@ retvals <- foreach (chgtraj_file=iter(chgtraj_files),
     sitecode <- str_extract(basename(chgtraj_file), '^[a-zA-Z]*')
     year <- str_extract(chgtraj_file, '[0-9]{4}')
     chgtraj_rast <- raster(chgtraj_file)
+    chgtraj_rast <- sampleRegular(chgtraj_rast, 1e6, asRaster=TRUE, 
+                                  useGDAL=TRUE)
 
     # Mask out area outside of ZOI
     zoi_file <- dir(zoi_folder, pattern=paste0('^ZOI_', sitecode, '_[0-9]{4}.RData'), 
@@ -158,15 +176,18 @@ retvals <- foreach (chgtraj_file=iter(chgtraj_files),
     traj_codes$t1_name_abbrev <- class_names_abbrev[match(traj_codes$t1_name, class_names_R)]
     traj_codes$trans_name <- with(traj_codes, paste(t0_name_abbrev, t1_name_abbrev, sep=' -> '))
 
-    traj_codes$ToForest <- 0
-    traj_codes$ToForest[with(traj_codes, (t0_name != "Natural.forest") & (t1_name == "Natural.forest"))] <- 1
-    traj_codes$FromForest <- 0
-    traj_codes$FromForest[with(traj_codes, (t0_name == "Natural.forest") & (t1_name != "Natural.forest"))] <- 1
+    # Make forest/non-forest transition image
+    traj_codes$ForestChange <- NA
+    traj_codes$ForestChange[with(traj_codes, (t0_name != "Natural.forest") & (t1_name == "Natural.forest"))] <- 1
+    traj_codes$ForestChange[with(traj_codes, (t0_name == "Natural.forest") & (t1_name != "Natural.forest"))] <- 2
+    forest_subs <- data.frame(from=traj_codes$Code[!is.na(traj_codes$ForestChange)],
+                              to=traj_codes$ForestChange[!is.na(traj_codes$ForestChange)])
+    forest_change <- chgtraj_rast
+    forest_change <- subs(chgtraj_rast, forest_subs)
 
-    traj_codes[traj_codes$t0_code == traj_codes$t1_code, ]$NewCode <- NA
-
-    # Code no-change as 999
-    chgtraj_rast_chgonly <- subs(chgtraj_rast, data.frame(traj_codes$Code, traj_codes$NewCode))
+    plot_trajs(forest_change, zoi,
+               data.frame(code=c(1, 2), label=c("To forest", "From forest")),
+               title="Forest transition")
     
     # Make loss/gain images
     trajs <- data.frame(code=NA,
