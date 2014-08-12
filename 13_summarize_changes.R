@@ -45,7 +45,7 @@ class_names_abbrev <- c('Urban',
 traj_freqs_files <- dir(traj_freqs_dir,
                         pattern='^[a-zA-Z]*_[0-9]{4}-[0-9]{4}_chgdetect_chgtraj_freqs.csv$')
 traj_freqs <- foreach(traj_freqs_file=iter(traj_freqs_files),
-                 .packages=c('ggplot2', 'dplyr'),
+                 .packages=c('ggplot2'),
                  .combine=rbind, .inorder=FALSE) %do% {
     sitecode <- str_extract(basename(traj_freqs_file), '^[a-zA-Z]*')
     time_string <- str_extract(traj_freqs_file, '[0-9]{4}-[0-9]{4}')
@@ -73,7 +73,7 @@ preds_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Predictions')
 class_freqs_files <- dir(preds_basedir,
                          pattern='^[a-zA-Z]*_mosaic_[0-9]{4}_predictors_predclasses_classfreqs.csv$')
 class_freqs <- foreach(class_freqs_file=iter(class_freqs_files),
-                       .packages=c('ggplot2', 'dplyr'),
+                       .packages=c('ggplot2'),
                        .combine=rbind, .inorder=FALSE) %do% {
     class_freqs <- read.csv(file.path(preds_basedir, class_freqs_file), stringsAsFactors=FALSE)
     class_freqs$name[is.na(class_freqs$code)] <- 'Unknown'
