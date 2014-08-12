@@ -106,7 +106,6 @@ num_res <- foreach (chgmag_file=iter(chgmag_files), zoi_file=iter(zoi_files),
     zoi <- spTransform(zoi, CRS(proj4string(chgmag_image)))
     zoi_rast <- rasterize(zoi, chgmag_image, 1, silent=TRUE)
 
-
     chgmag_image_crop <- crop(chgmag_image, zoi)
     chgmag_image_crop <- mask(chgmag_image_crop, zoi)
     chg_threshold <- threshold(chgmag_image_crop)
