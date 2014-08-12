@@ -96,8 +96,8 @@ num_res <- foreach (chgmag_file=iter(chgmag_files), zoi_file=iter(zoi_files),
 
     chgmag_image_crop <- crop(chgmag_image, zoi)
     chgmag_image_crop <- mask(chgmag_image_crop, zoi)
-    chg_threshold <- threshold(chgmag_image_crop, by=.025)
-
+    chg_threshold <- threshold(chgmag_image_crop)
+    
     chg_threshold_filename <- file.path(out_dir,
                                         paste(out_basename, 'threshold.txt', 
                                               sep='_'))
