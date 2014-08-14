@@ -89,18 +89,22 @@ class_freqs <- foreach(class_freqs_file=iter(class_freqs_files),
     return(class_freqs)
 }
 
+# TODO: integrate number of cells in ZOI per image into calculation so that 
+# results are normalized.
+
 for (sitecode in unique(traj_freqs$sitecode)) {
     site_traj_freqs <- traj_freqs[traj_freqs$sitecode == sitecode, ]
-    persist <- summarize(group_by(site_traj_freqs, t0, t0_name),
-                         pct=paste0(round(freq[t0_name == t1_name] / sum(freq), 2)),
-                         t0_name_abbrev=t0_name_abbrev[1])
-    freqs_zeroed_persist <- site_traj_freqs
-    freqs_zeroed_persist$freq[freqs_zeroed_persist$t0_name == freqs_zeroed_persist$t1_name] <- 0
+    # persist <- summarize(group_by(site_traj_freqs, t0, t0_name),
+    #                      pct=paste0(round(freq[t0_name == t1_name] / sum(freq), 2)),
+    #                      t0_name_abbrev=t0_name_abbrev[1])
+    # freqs_zeroed_persist <- site_traj_freqs
+    # freqs_zeroed_persist$freq[freqs_zeroed_persist$t0_name == freqs_zeroed_persist$t1_name] <- 0
 
-    ggplot(freqs_zeroed_persist) +
+    ggplot(site_traj_freqs) +
         theme_bw() +
         geom_tile(aes(x=t1_name_abbrev, y=t0_name_abbrev, fill=freq/sum(freq)), colour='black') +
-        geom_text(aes(x=t0_name_abbrev, y=t0_name_abbrev, label=pct), data=persist) +
+        #geom_text(aes(x=t0_name_abbrev, y=t0_name_abbrev, label=pct), 
+        #data=persist) +
         scale_fill_gradientn('Relative\nFrequency', limits=c(0, .25),
                              colours=c('white', 'orange', 'red')) +
         xlab('Class in time 1') + ylab('Class in time 0') +
@@ -111,6 +115,9 @@ for (sitecode in unique(traj_freqs$sitecode)) {
     ggsave(file.path(traj_freqs_dir, paste('transitions', sitecode, 'colorplot.png', sep='_')),
            height=img_height, width=img_width, dpi=img_dpi)
 }
+
+# Plot trajectory frequencies by site
+ggplot(traj_freqs, aes())
 
 # Plot percentage of pixels changing over time
 class_freqs <- group_by(class_freqs, sitecode, year)
