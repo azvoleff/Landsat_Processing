@@ -72,7 +72,7 @@ stopifnot(length(chgmag_files) == length(year_2s))
 stopifnot(length(chgmag_files) == length(classes_1_filenames))
 
 #Run change detection on each pair
-notify(paste0('Starting change detection. ', length(chgmag_files), ' image sets to process.'))
+notify(paste0('Calculating change trajectories. ', length(chgmag_files), ' image sets to process.'))
 num_res <- foreach (chgmag_file=iter(chgmag_files), zoi_file=iter(zoi_files),
                     classes_1_filename=iter(classes_1_filenames),
                     year_1=iter(year_1s), year_2=iter(year_2s),
@@ -160,6 +160,6 @@ num_res <- foreach (chgmag_file=iter(chgmag_files), zoi_file=iter(zoi_files),
 }
 
 if (length(num_res) == 0) num_res <- 0
-notify(paste0('Finished change detection. Processed ', sum(num_res), ' images.'))
+notify(paste0('Finished calculating change trajectories. Processed ', sum(num_res), ' images.'))
 
 stopCluster(cl)
