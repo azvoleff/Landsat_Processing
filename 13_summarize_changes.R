@@ -69,6 +69,8 @@ traj_freqs <- foreach(traj_freqs_file=iter(traj_freqs_files),
     return(traj_freqs)
 }
 
+traj_freqs <- tbl_df(traj_freqs)
+
 preds_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Predictions')
 class_freqs_files <- dir(preds_basedir,
                          pattern='^[a-zA-Z]*_mosaic_[0-9]{4}_predictors_predclasses_classfreqs.csv$')
@@ -116,8 +118,12 @@ for (sitecode in unique(traj_freqs$sitecode)) {
            height=img_height, width=img_width, dpi=img_dpi)
 }
 
+traj_freqs$trans <- factor(paste(traj_freqs$t0_name, traj_freqs$t1_name, sep="->"))
+
 # Plot trajectory frequencies by site
-ggplot(traj_freqs, aes())
+ggplot(traj_freqs) +
+    geom_bar(aes(t1, freq, fill=t1_name), stat="identity", position="dodge") +
+    facet_wrap(~sitecode, scales="free_y")
 
 # Plot percentage of pixels changing over time
 class_freqs <- group_by(class_freqs, sitecode, year)
