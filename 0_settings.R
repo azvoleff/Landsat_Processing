@@ -67,3 +67,39 @@ is_preprocessed <- function(image_dir) {
     }
 }
 
+class_names_pretty <- c('Urban/built',
+                        'Agriculture',
+                        'Plantation forest',
+                        'Natural forest',
+                        'Other vegetation',
+                        'Bare',
+                        'Water',
+                        'Unknown')
+
+class_names_R <- c('Urban.built',
+                   'Agriculture',
+                   'Plantation.forest',
+                   'Natural.forest',
+                   'Other.vegetation',
+                   'Bare',
+                   'Water',
+                   'Unknown')
+
+class_names_abbrev <- c('Urban',
+                        'Ag',
+                        'PlanFor',
+                        'NatFor',
+                        'OthVeg',
+                        'Bare',
+                        'Water',
+                        'Unk')
+
+class_colors <- c('#CC0000',
+                  '#F3F781',
+                  '#3366FF',
+                  '#088A08',
+                  '#82FA58',
+                  '#DBA901',
+                  '#58D3F7',
+                  '#A4A4A4')
+

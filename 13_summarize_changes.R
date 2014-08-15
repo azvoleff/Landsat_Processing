@@ -15,32 +15,9 @@ img_width <- 10
 img_height <- 7.5
 img_dpi <- 300
 
-traj_freqs_dir <- file.path(prefix, 'Landsat', 'Composites', 'Change_Detection')
+load("zoi_n_pix_change.RData")
 
-class_names_pretty <- c('Urban/built',
-                        'Agriculture',
-                        'Plantation forest',
-                        'Natural forest',
-                        'Other vegetation',
-                        'Bare',
-                        'Water',
-                        'Unknown')
-class_names_R <- c('Urban.built',
-                   'Agriculture',
-                   'Plantation.forest',
-                   'Natural.forest',
-                   'Other.vegetation',
-                   'Bare',
-                   'Water',
-                   'Unknown')
-class_names_abbrev <- c('Urban',
-                        'Ag',
-                        'PlanFor',
-                        'NatFor',
-                        'OthVeg',
-                        'Bare',
-                        'Water',
-                        'Unk')
+traj_freqs_dir <- file.path(prefix, 'Landsat', 'Composites', 'Change_Detection')
 
 traj_freqs_files <- dir(traj_freqs_dir,
                         pattern='^[a-zA-Z]*_[0-9]{4}-[0-9]{4}_chgdetect_chgtraj_freqs.csv$')
@@ -70,6 +47,10 @@ traj_freqs <- foreach(traj_freqs_file=iter(traj_freqs_files),
 }
 
 traj_freqs <- tbl_df(traj_freqs)
+traj_freqs$period <- paste(traj_freqs$t0, traj_freqs$t1, sep=" -> ")
+
+write.csv(traj_freqs, file="traj_freqs.csv", row.names=FALSE)
+save(traj_freqs, file="traj_freqs.RData")
 
 preds_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Predictions')
 class_freqs_files <- dir(preds_basedir,
@@ -90,6 +71,9 @@ class_freqs <- foreach(class_freqs_file=iter(class_freqs_files),
 
     return(class_freqs)
 }
+
+write.csv(class_freqs, file="class_freqs.csv", row.names=FALSE)
+save(class_freqs, file="class_freqs.RData")
 
 # TODO: integrate number of cells in ZOI per image into calculation so that 
 # results are normalized.
@@ -118,12 +102,36 @@ for (sitecode in unique(traj_freqs$sitecode)) {
            height=img_height, width=img_width, dpi=img_dpi)
 }
 
-traj_freqs$trans <- factor(paste(traj_freqs$t0_name, traj_freqs$t1_name, sep="->"))
+traj_freqs_site_period <- paste(traj_freqs$sitecode, traj_freqs$period)
+valid_zoi_pix <- zoi_pix[zoi_pix$pixtype == "Valid", ]
+valid_zoi_pix_site_period <- paste(valid_zoi_pix$sitecode, valid_zoi_pix$period)
+traj_freqs$freq_as_frac <- traj_freqs$freq/valid_zoi_pix$n[match(traj_freqs_site_period, valid_zoi_pix_site_period)]
+
+classes <- data.frame(label=class_names_pretty,
+                      color=class_colors,
+                      stringsAsFactors=FALSE)
 
 # Plot trajectory frequencies by site
 ggplot(traj_freqs) +
-    geom_bar(aes(t1, freq, fill=t1_name), stat="identity", position="dodge") +
-    facet_wrap(~sitecode, scales="free_y")
+    geom_bar(aes(t0, freq_as_frac, fill=t0_name), stat="identity", position="dodge") +
+    facet_wrap(~sitecode) + 
+    scale_fill_manual("Time 0 Cover", values=classes$color, breaks=classes$label,
+                      labels=classes$label, drop=FALSE) +
+    xlab("End of period") +
+    ylab("Fraction of all pixels")
+ggsave(file.path(preds_basedir, 'transition_frequencies_all_sites_normalized_time0.png'),
+       height=img_height, width=img_width, dpi=img_dpi)
+
+# Plot trajectory frequencies by site
+ggplot(traj_freqs) +
+    geom_bar(aes(t1, freq_as_frac, fill=t1_name), stat="identity", position="dodge") +
+    facet_wrap(~sitecode) + 
+    scale_fill_manual("Time 0 Cover", values=classes$color, breaks=classes$label,
+                      labels=classes$label, drop=FALSE) +
+    xlab("End of period") +
+    ylab("Fraction of all pixels")
+ggsave(file.path(preds_basedir, 'transition_frequencies_all_sites_normalized_time1.png'),
+       height=img_height, width=img_width, dpi=img_dpi)
 
 # Plot percentage of pixels changing over time
 class_freqs <- group_by(class_freqs, sitecode, year)
