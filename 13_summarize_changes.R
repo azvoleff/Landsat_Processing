@@ -117,20 +117,22 @@ ggplot(traj_freqs) +
     facet_wrap(~sitecode) + 
     scale_fill_manual("Time 0 Cover", values=classes$color, breaks=classes$label,
                       labels=classes$label, drop=FALSE) +
-    xlab("End of period") +
-    ylab("Fraction of all pixels")
-ggsave(file.path(preds_basedir, 'transition_frequencies_all_sites_normalized_time0.png'),
+    xlab("Start of period") +
+    ylab("Fraction of all pixels") +
+    ggtitle("Time 0")
+ggsave(file.path(traj_freqs_dir, 'transition_frequencies_all_sites_normalized_time0.png'),
        height=img_height, width=img_width, dpi=img_dpi)
 
 # Plot trajectory frequencies by site
 ggplot(traj_freqs) +
     geom_bar(aes(t1, freq_as_frac, fill=t1_name), stat="identity", position="dodge") +
     facet_wrap(~sitecode) + 
-    scale_fill_manual("Time 0 Cover", values=classes$color, breaks=classes$label,
+    scale_fill_manual("Time 1 Cover", values=classes$color, breaks=classes$label,
                       labels=classes$label, drop=FALSE) +
     xlab("End of period") +
-    ylab("Fraction of all pixels")
-ggsave(file.path(preds_basedir, 'transition_frequencies_all_sites_normalized_time1.png'),
+    ylab("Fraction of all pixels") +
+    ggtitle("Time 1")
+ggsave(file.path(traj_freqs_dir, 'transition_frequencies_all_sites_normalized_time1.png'),
        height=img_height, width=img_width, dpi=img_dpi)
 
 # Plot percentage of pixels changing over time

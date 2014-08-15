@@ -28,40 +28,6 @@ out_dir <- image_basedir
 
 stopifnot(file_test('-d', out_dir))
 
-class_names_pretty <- c('Urban/built',
-                        'Agriculture',
-                        'Plantation forest',
-                        'Natural forest',
-                        'Other vegetation',
-                        'Bare',
-                        'Water',
-                        'Unknown')
-class_names_R <- c('Urban.built',
-                   'Agriculture',
-                   'Plantation.forest',
-                   'Natural.forest',
-                   'Other.vegetation',
-                   'Bare',
-                   'Water',
-                   'Unknown')
-class_names_abbrev <- c('Urban',
-                        'Ag',
-                        'PlanFor',
-                        'NatFor',
-                        'OthVeg',
-                        'Bare',
-                        'Water',
-                        'Unk')
-
-class_colors <- c('#CC0000',
-                  '#F3F781',
-                  '#3366FF',
-                  '#088A08',
-                  '#82FA58',
-                  '#DBA901',
-                  '#58D3F7',
-                  '#A4A4A4')
-
 chgtraj_files <- dir(image_basedir,
                      pattern=paste0('^[a-zA-Z]{2,3}_[0-9]{4}-[0-9]{4}_chgdetect_chgtraj.tif$'),
                      full.names=TRUE)
@@ -96,7 +62,7 @@ chgtraj_lut_file <- chgtraj_lut_files[1]
 #' @param size_scale a number used to scale the size of the plot text
 #' @param maxpixels the maximum number of pixels from x to use in plotting
 plot_trajs <- function(x, aoi, classes, title_string='', size_scale=1, 
-                         maxpixels=1e6, legend_title="Cover") {
+                       maxpixels=2e6, legend_title="Cover") {
     aoi_tr <- spTransform(aoi, CRS(proj4string(x)))
     aoi_tr$ID <- row.names(aoi_tr)
     if (!('label' %in% names(aoi_tr))) {
@@ -137,19 +103,8 @@ plot_trajs <- function(x, aoi, classes, title_string='', size_scale=1,
         ggtitle(title_string)
 }
 
-chgmag_file <- gsub("chgtraj", "chgmag", chgtraj_file)
-chgmag_image <- raster(chgmag_file)
-chgdir_file <- gsub("chgtraj", "chgdir", chgtraj_file)
-chgdir_image <- raster(chgdir_file)
-classes_1_probs_file <- "H:/Data/Landsat/Composites/Predictions/BIF_mosaic_1990_predictors_predprobs.tif"
-classes_1_probs_image <- stack(classes_1_probs_file)
-classes_2_probs_file <- "H:/Data/Landsat/Composites/Predictions/BIF_mosaic_1995_predictors_predprobs.tif"
-classes_2_probs_image <- stack(classes_2_probs_file)
-
-img1 <- as.matrix(c(.2, .4, .5), ncol=1, byrow=TRUE)
-img2 <- as.matrix(c(.3, .1, .6), nrow=1, byrow=TRUE)
-calc_chg_dir(as.matrix(c(.2, .4, .5), nrow=1, byrow=TRUE),
-             as.matrix(c(.3, .1, .6), nrow=1, byrow=TRUE))
+chgtraj_file <- chgtraj_files[1]
+chgtraj_lut_file <- chgtraj_lut_files[1]
 
 retvals <- foreach (chgtraj_file=iter(chgtraj_files), 
                     chgtraj_lut_file=iter(chgtraj_lut_files),
@@ -182,38 +137,32 @@ retvals <- foreach (chgtraj_file=iter(chgtraj_files),
     traj_codes$ForestChange[with(traj_codes, (t0_name == "Natural.forest") & (t1_name != "Natural.forest"))] <- 2
     forest_subs <- data.frame(from=traj_codes$Code[!is.na(traj_codes$ForestChange)],
                               to=traj_codes$ForestChange[!is.na(traj_codes$ForestChange)])
-    forest_change <- chgtraj_rast
-    forest_change <- subs(chgtraj_rast, forest_subs)
+    ForestChange <- chgtraj_rast
+    ForestChange <- subs(chgtraj_rast, forest_subs)
+    plot_trajs(ForestChange, zoi,
+               data.frame(code=c(1, 2),
+                          label=c("Forest gain", "Forest loss"),
+                          color=c("#33FF33", "#FF3333"),
+                          stringsAsFactors=FALSE),
+               title="Forest change")
+    ggsave(paste0(file_path_sans_ext(chgtraj_file), '_transitions_natforest_change.png'), 
+           width=img_width, height=img_height, dpi=img_dpi)
 
-    plot_trajs(forest_change, zoi,
-               data.frame(code=c(1, 2), label=c("To forest", "From forest")),
-               title="Forest transition")
-    
-    # Make loss/gain images
-    trajs <- data.frame(code=NA,
-                        label=class_names_abbrev,
-                        color=class_colors,
-                        stringsAsFactors=FALSE)
-
-    plot_classes(chgtraj_rast_chgonly, zoi,
-                 classes=data.frame(code=traj_codes$NewCode,
-                                    label=traj_codes$trans_name),
-                 legend_title="Transition")
-
-    # Assign codes to trajs that are in this image. Assign codes to the 
-    # others just so the plot code doesn't choke, and so these trajs remain 
-    # in the legend, even if they do not appear in the image.
-    #
-    # First fill in proper codes for trajs that do appear in image
-    trajs_rows_match <- match(traj_freqs$class, class_names_R)
-    trajs[trajs_rows_match, ]$code <- traj_freqs$code
-    # Now fill in random codes for trajs that don't appear in the image
-    trajs_rows_nas <- is.na(trajs$code)
-    trajs[trajs_rows_nas, ]$code <- seq(100, length.out=sum(trajs_rows_nas))
-
-    title_string <- paste(sitecode, year, sep=' - ')
-    plot_trajs(chgtraj_rast, zoi, trajs, title_string)
-    ggsave(paste0(file_path_sans_ext(chgtraj_file), '_browse.png'), 
+    # Make plantation forest/non plantation forest transition image
+    traj_codes$PlantChange <- NA
+    traj_codes$PlantChange[with(traj_codes, (t0_name != "Plantation.forest") & (t1_name == "Plantation.forest"))] <- 1
+    traj_codes$PlantChange[with(traj_codes, (t0_name == "Plantation.forest") & (t1_name != "Plantation.forest"))] <- 2
+    forest_subs <- data.frame(from=traj_codes$Code[!is.na(traj_codes$PlantChange)],
+                              to=traj_codes$PlantChange[!is.na(traj_codes$PlantChange)])
+    PlantChange <- chgtraj_rast
+    PlantChange <- subs(chgtraj_rast, forest_subs)
+    plot_trajs(PlantChange, zoi,
+               data.frame(code=c(1, 2),
+                          label=c("To plantation", "From plantation"),
+                          color=c("#33FF33", "#FF3333"),
+                          stringsAsFactors=FALSE),
+               title="Plantation change")
+    ggsave(paste0(file_path_sans_ext(chgtraj_file), '_transitions_plantation_change.png'), 
            width=img_width, height=img_height, dpi=img_dpi)
 }
 
