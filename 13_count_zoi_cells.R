@@ -91,8 +91,8 @@ zoi_pix <- foreach (chgmag_file=iter(chgmag_files), zoi_file=iter(zoi_files),
     chgmag[is.na(zoi_rast)] <- -1
 
     n_pix <- cellStats(chgmag != -1, 'sum')
-    n_NA <- cellStats(chgmag == 0, 'sum')
-    n_good <- cellStats(chgmag == 1, 'sum')
+    n_good <- cellStats(chgmag == 0, 'sum')
+    n_NA <- cellStats(chgmag == 1, 'sum')
     return(data.frame(sitecode=sitecode, t0=year_1, t1=year_2,
                       pixtype=c("Total", "Invalid", "Valid"),
                       n=c(n_pix, n_NA, n_good)))
