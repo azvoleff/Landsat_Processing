@@ -15,7 +15,7 @@ library(tools)
 redo_chg_detection <- TRUE
 overwrite <- TRUE
 
-min_chg_threshold <- 20
+chg_threshold_min <- 100
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
@@ -107,17 +107,23 @@ num_res <- foreach (chgmag_file=iter(chgmag_files), zoi_file=iter(zoi_files),
     zoi_rast <- rasterize(zoi, chgmag_image, 1, silent=TRUE)
 
     chgmag_image_crop <- crop(chgmag_image, zoi)
-    chgmag_image_crop <- mask(chgmag_image_crop, zoi)
-    chg_threshold <- threshold(chgmag_image_crop)
+    chgmag_image_crop <- chgmag_image_crop[is.na(zoi_rast)] <- NA
+    chg_threshold_auto <- threshold(chgmag_image_crop)
+
+    if (chg_threshold_auto < chg_threshold_min) {
+        chg_threshold <- chg_threshold_min
+    } else {
+        chg_threshold <- chg_threshold_auto
+    }
     
     chg_threshold_filename <- file.path(out_dir,
                                         paste(out_basename, 'threshold.txt', 
                                               sep='_'))
     write.csv(data.frame(sitecode=sitecode, year_1=year_1, year_2=year_2, 
-                         threshold=chg_threshold), file=chg_threshold_filename, 
+                         threshold=chg_threshold,
+                         threshold_auto=chg_threshold_auto),
+              file=chg_threshold_filename, 
               row.names=FALSE)
-
-    if (chg_threshold < min_chg_threshold) chg_threshold <- min_chg_threshold
 
     key_file_1 <- gsub('predclasses.tif', 'classeskey.csv', classes_1_filename)
     class_key <- read.csv(key_file_1)
