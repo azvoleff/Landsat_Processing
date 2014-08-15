@@ -98,6 +98,10 @@ zoi_pix <- foreach (chgmag_file=iter(chgmag_files), zoi_file=iter(zoi_files),
                       n=c(n_pix, n_NA, n_good)))
 }
 
+# Ensure sitecodes are in alphabetical order prior to ordering zoi_pix
+zoi_pix$sitecode <- factor(as.character(zoi_pix$sitecode))
+zoi_pix <- zoi_pix[order(zoi_pix$sitecode, zoi_pix$t0), ]
+
 save(zoi_pix, file="zoi_n_pix_change.RData")
 
 zoi_pix$period <- paste(zoi_pix$t0, zoi_pix$t1, sep=" -> ")
