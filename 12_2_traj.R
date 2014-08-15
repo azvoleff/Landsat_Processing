@@ -123,7 +123,7 @@ num_res <- foreach (chgmag_file=iter(chgmag_files), zoi_file=iter(zoi_files),
     class_key <- read.csv(key_file_1)
 
     chg_traj_out <- chg_traj(chgmag_image, chgdir_image, 
-                             chg_threshold=chg_threshold,
+                             chg_threshold=chg_threshold)
 
     chg_traj_filename <- file.path(out_dir, paste(out_basename, 'chgtraj.tif', 
                                                   sep='_'))
