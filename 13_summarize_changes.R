@@ -49,6 +49,11 @@ traj_freqs <- foreach(traj_freqs_file=iter(traj_freqs_files),
 traj_freqs <- tbl_df(traj_freqs)
 traj_freqs$period <- paste(traj_freqs$t0, traj_freqs$t1, sep=" -> ")
 
+traj_freqs_site_period <- paste(traj_freqs$sitecode, traj_freqs$period)
+valid_zoi_pix <- zoi_pix[zoi_pix$pixtype == "Valid", ]
+valid_zoi_pix_site_period <- paste(valid_zoi_pix$sitecode, valid_zoi_pix$period)
+traj_freqs$freq_as_frac <- traj_freqs$freq/valid_zoi_pix$n[match(traj_freqs_site_period, valid_zoi_pix_site_period)]
+
 write.csv(traj_freqs, file="traj_freqs.csv", row.names=FALSE)
 save(traj_freqs, file="traj_freqs.RData")
 
@@ -101,11 +106,6 @@ for (sitecode in unique(traj_freqs$sitecode)) {
     ggsave(file.path(traj_freqs_dir, paste('transitions', sitecode, 'colorplot.png', sep='_')),
            height=img_height, width=img_width, dpi=img_dpi)
 }
-
-traj_freqs_site_period <- paste(traj_freqs$sitecode, traj_freqs$period)
-valid_zoi_pix <- zoi_pix[zoi_pix$pixtype == "Valid", ]
-valid_zoi_pix_site_period <- paste(valid_zoi_pix$sitecode, valid_zoi_pix$period)
-traj_freqs$freq_as_frac <- traj_freqs$freq/valid_zoi_pix$n[match(traj_freqs_site_period, valid_zoi_pix_site_period)]
 
 classes <- data.frame(label=class_names_pretty,
                       color=class_colors,
