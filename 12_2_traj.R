@@ -71,6 +71,13 @@ stopifnot(length(chgmag_files) == length(year_1s))
 stopifnot(length(chgmag_files) == length(year_2s))
 stopifnot(length(chgmag_files) == length(classes_1_filenames))
 
+
+#zoi_file <- zoi_files[1]
+#chgmag_file <- chgmag_files[1]
+#classes_1_filename <- classes_1_filenames[1]
+#year_1 <- year_1s[1]
+#year_2 <- year_2s[1]
+
 #Run change detection on each pair
 notify(paste0('Calculating change trajectories. ', length(chgmag_files), ' image sets to process.'))
 num_res <- foreach (chgmag_file=iter(chgmag_files), zoi_file=iter(zoi_files),
@@ -84,7 +91,6 @@ num_res <- foreach (chgmag_file=iter(chgmag_files), zoi_file=iter(zoi_files),
     rasterOptions(tmpdir=raster_tmpdir)
 
     sitecode <- str_extract(basename(chgmag_file), '^[a-zA-Z]*')
-
 
     out_basename <- paste0(sitecode, '_', year_1, '-', year_2, '_chgdetect')
 
@@ -107,7 +113,8 @@ num_res <- foreach (chgmag_file=iter(chgmag_files), zoi_file=iter(zoi_files),
     zoi_rast <- rasterize(zoi, chgmag_image, 1, silent=TRUE)
 
     chgmag_image_crop <- crop(chgmag_image, zoi)
-    chgmag_image_crop <- chgmag_image_crop[is.na(zoi_rast)] <- NA
+    zoi_rast_crop <- crop(zoi_rast, zoi)
+    chgmag_image_crop[is.na(zoi_rast_crop)] <- NA
     chg_threshold_auto <- threshold(chgmag_image_crop)
 
     if (chg_threshold_auto < chg_threshold_min) {
