@@ -121,6 +121,7 @@ retvals <- foreach (chgtraj_file=iter(chgtraj_files),
     load(zoi_file)
     zoi <- spTransform(zoi, CRS(proj4string(chgtraj_rast)))
     chgtraj_rast <- crop(chgtraj_rast, zoi)
+
     zoi_rast <- rasterize(zoi, chgtraj_rast, 1, silent=TRUE)
     chgtraj_rast[is.na(zoi_rast)] <- NA
 
@@ -137,31 +138,57 @@ retvals <- foreach (chgtraj_file=iter(chgtraj_files),
                               to=traj_codes$ForestChange[!is.na(traj_codes$ForestChange)])
     ForestChange <- chgtraj_rast
     ForestChange <- subs(chgtraj_rast, forest_subs)
-    plot_trajs(ForestChange, zoi,
-               data.frame(code=c(1, 2),
-                          label=c("Forest gain", "Forest loss"),
-                          color=c("#33FF33", "#FF3333"),
-                          stringsAsFactors=FALSE),
-               title="Forest change")
-    ggsave(paste0(file_path_sans_ext(chgtraj_file), '_transitions_natforest_change.png'), 
-           width=img_width, height=img_height, dpi=img_dpi, type=type)
+    if (cellStats(is.na(ForestChange), "sum") != ncell(ForestChange)) {
+        plot_trajs(ForestChange, zoi,
+                   data.frame(code=c(1, 2),
+                              label=c("Forest gain", "Forest loss"),
+                              color=c("#33FF33", "#FF3333"),
+                              stringsAsFactors=FALSE),
+                   title="Forest change")
+        ggsave(paste0(file_path_sans_ext(chgtraj_file), '_transitions_natforest_change.png'), 
+               width=img_width, height=img_height, dpi=img_dpi, type=type)
+    }
 
     # Make plantation forest/non plantation forest transition image
     traj_codes$PlantChange <- NA
     traj_codes$PlantChange[with(traj_codes, (t0_name != "Plantation.forest") & (t1_name == "Plantation.forest"))] <- 1
     traj_codes$PlantChange[with(traj_codes, (t0_name == "Plantation.forest") & (t1_name != "Plantation.forest"))] <- 2
-    forest_subs <- data.frame(from=traj_codes$Code[!is.na(traj_codes$PlantChange)],
-                              to=traj_codes$PlantChange[!is.na(traj_codes$PlantChange)])
+    planforest_subs <- data.frame(from=traj_codes$Code[!is.na(traj_codes$PlantChange)],
+                                  to=traj_codes$PlantChange[!is.na(traj_codes$PlantChange)])
     PlantChange <- chgtraj_rast
-    PlantChange <- subs(chgtraj_rast, forest_subs)
-    plot_trajs(PlantChange, zoi,
-               data.frame(code=c(1, 2),
-                          label=c("To plantation", "From plantation"),
-                          color=c("#33FF33", "#FF3333"),
-                          stringsAsFactors=FALSE),
-               title="Plantation change")
-    ggsave(paste0(file_path_sans_ext(chgtraj_file), '_transitions_plantation_change.png'), 
-           width=img_width, height=img_height, dpi=img_dpi, type=type)
+    PlantChange <- subs(chgtraj_rast, planforest_subs)
+    # Only make the plot if there are cells that show change
+    if (cellStats(is.na(PlantChange), "sum") != ncell(PlantChange)) {
+        plot_trajs(PlantChange, zoi,
+                   data.frame(code=c(1, 2),
+                              label=c("To plantation", "From plantation"),
+                              color=c("#33FF33", "#FF3333"),
+                              stringsAsFactors=FALSE),
+                   title="Plantation change")
+        ggsave(paste0(file_path_sans_ext(chgtraj_file), '_transitions_plantation_change.png'), 
+               width=img_width, height=img_height, dpi=img_dpi, type=type)
+    }
+
+    # Make ag/non-ag transition image
+    ag_classes <-  c("Agriculture", "Plantation.forest")
+    traj_codes$AgChange <- NA
+    traj_codes$AgChange[with(traj_codes, !(t0_name %in% ag_classes) & (t1_name %in% ag_classes))] <- 1
+    traj_codes$AgChange[with(traj_codes, (t0_name %in% ag_classes) & !(t1_name %in% ag_classes))] <- 2
+    ag_subs <- data.frame(from=traj_codes$Code[!is.na(traj_codes$AgChange)],
+                              to=traj_codes$AgChange[!is.na(traj_codes$AgChange)])
+    AgChange <- chgtraj_rast
+    AgChange <- subs(chgtraj_rast, ag_subs)
+    if (cellStats(is.na(AgChange), "sum") != ncell(AgChange)) {
+        plot_trajs(AgChange, zoi,
+                   data.frame(code=c(1, 2),
+                              label=c("Ag gain", "Ag loss"),
+                              color=c("#33FF33", "#FF3333"),
+                              stringsAsFactors=FALSE),
+                   title="Agricultural change")
+        ggsave(paste0(file_path_sans_ext(chgtraj_file), '_transitions_ag_change.png'), 
+               width=img_width, height=img_height, dpi=img_dpi, type=type)
+    }
+
 }
 
 stopCluster(cl)
