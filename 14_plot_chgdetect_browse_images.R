@@ -18,6 +18,7 @@ library(tools)
 img_width <- 7
 img_height <- 7
 img_dpi <- 300
+type <- "cairo"
 
 overwrite <- TRUE
 
@@ -36,8 +37,8 @@ chgtraj_lut_files <- dir(image_basedir,
                          full.names=TRUE)
 stopifnot(length(chgtraj_files) == length(chgtraj_lut_files))
 
-chgtraj_file <- chgtraj_files[1]
-chgtraj_lut_file <- chgtraj_lut_files[1]
+# chgtraj_file <- chgtraj_files[1]
+# chgtraj_lut_file <- chgtraj_lut_files[1]
 
 #' Function to plot classified image for a given year
 #'
@@ -103,9 +104,6 @@ plot_trajs <- function(x, aoi, classes, title_string='', size_scale=1,
         ggtitle(title_string)
 }
 
-chgtraj_file <- chgtraj_files[1]
-chgtraj_lut_file <- chgtraj_lut_files[1]
-
 retvals <- foreach (chgtraj_file=iter(chgtraj_files), 
                     chgtraj_lut_file=iter(chgtraj_lut_files),
                     .packages=c('stringr', 'tools', 'raster', 'plyr', 'grid', 
@@ -146,7 +144,7 @@ retvals <- foreach (chgtraj_file=iter(chgtraj_files),
                           stringsAsFactors=FALSE),
                title="Forest change")
     ggsave(paste0(file_path_sans_ext(chgtraj_file), '_transitions_natforest_change.png'), 
-           width=img_width, height=img_height, dpi=img_dpi)
+           width=img_width, height=img_height, dpi=img_dpi, type=type)
 
     # Make plantation forest/non plantation forest transition image
     traj_codes$PlantChange <- NA
@@ -163,7 +161,7 @@ retvals <- foreach (chgtraj_file=iter(chgtraj_files),
                           stringsAsFactors=FALSE),
                title="Plantation change")
     ggsave(paste0(file_path_sans_ext(chgtraj_file), '_transitions_plantation_change.png'), 
-           width=img_width, height=img_height, dpi=img_dpi)
+           width=img_width, height=img_height, dpi=img_dpi, type=type)
 }
 
 stopCluster(cl)
