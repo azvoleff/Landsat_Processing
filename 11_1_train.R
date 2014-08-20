@@ -11,7 +11,7 @@ library(stringr)
 library(lubridate)
 library(tools)
 
-redo_extract <- TRUE
+redo_extract <- FALSE
 redo_training <- TRUE
 overwrite <- TRUE
 
@@ -23,11 +23,12 @@ sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
 sitecodes <- c("BIF", "CAX", "COU", "CSN",
                "MAS", "PSH", "RNF", "VB",
-               "YAN", "YAS")
+               "YAN", "YAS", "BCI", "BBS",
+               "UDZ", "NAK")
 
 tr_polys_dir <- file.path(prefix, 'Landsat', 'LCLUC_Training')
 image_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Predictors_5x5glcm')
-out_dir <- file.path(prefix, 'Landsat', 'Composites', 'Models')
+model_outdir <- file.path(prefix, 'Landsat', 'Composites', 'Models')
 
 notify('Starting training.')
 for (sitecode in sitecodes) {
@@ -53,7 +54,7 @@ for (sitecode in sitecodes) {
 
     ##########################################################################
     # Read training data
-    tr_pixels_file <- file.path(out_dir, paste0(sitecode, '_trainingpixels.RData'))
+    tr_pixels_file <- file.path(model_outdir, paste0(sitecode, '_trainingpixels.RData'))
     if (file_test('-f', tr_pixels_file) & !redo_extract) {
         load(tr_pixels_file)
     } else {
@@ -97,9 +98,20 @@ for (sitecode in sitecodes) {
             get_pixels(image_stack, these_polys, class_col=year_col_name, src=image_year)
         }
         endCluster()
+
+        # Ensure aspect is coded as a factor
+        tr_pixels@x$aspect <- factor(tr_pixels@x$aspect)
+
         save(tr_pixels, file=tr_pixels_file)
+
+        # Add year as a predictor
+        tr_pixels@x$year <- tr_pixels@pixel_src$src
+        tr_pixels@x$year <- factor(tr_pixels@x$year)
     }
 
+    ##########################################################################
+    # Train classifiier
+    
     # Function to subsample any classes in a pixel_data object that have more 
     # than maxpix pixels
     subsample_classes <- function(x, maxpix=4000) {
@@ -109,16 +121,15 @@ for (sitecode in sitecodes) {
                        type='testing')
         return(x)
     }
-    ##########################################################################
-    # Train classifiier
+
     if (redo_training) {
-        model_file <- file.path(out_dir, paste0(sitecode, '_rfmodel.RData'))
+        model_file <- file.path(model_outdir, paste0(sitecode, '_rfmodel.RData'))
         message('Training classifier...')
         if (length(tr_pixels) > 30000) {
             set.seed(0)
             tr_pixels <- subsample_classes(tr_pixels)
         }
-        model <- train_classifier(tr_pixels)
+        model <- train_classifier(tr_pixels, ntree=1001)
         save(model, file=model_file)
     }
 
