@@ -11,7 +11,7 @@ library(stringr)
 library(lubridate)
 library(tools)
 
-redo_extract <- FALSE
+redo_extract <- TRUE
 redo_training <- TRUE
 overwrite <- TRUE
 
