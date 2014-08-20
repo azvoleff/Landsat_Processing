@@ -17,7 +17,8 @@ overwrite <- TRUE
 
 predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi', 
                      'msavi_glcm_mean', 'msavi_glcm_variance', 
-                     'msavi_glcm_dissimilarity', 'elev', 'slope', 'year')
+                     'msavi_glcm_dissimilarity', 'elev', 'slope', 'aspect', 
+                     'year')
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
@@ -81,9 +82,10 @@ for (sitecode in sitecodes) {
                              .packages=c('teamlucc', 'rgdal', 'sp', 'maptools')) %do% {
             image_stack <- stack(file.path(image_basedir, image_file))
             image_year <- gsub('_', '', str_extract(image_file, '_[0-9]{4}_'))
-            # Drop the 13th layer (aspect) as it isn't all that useful for 
-            # these predictions.
-            image_stack <- dropLayer(image_stack, 13)
+
+            # # Drop the 13th layer (aspect) as it isn't all that useful for 
+            # # these predictions.
+            # image_stack <- dropLayer(image_stack, 13)
 
             # Add year as a predictor
             image_stack$year <- as.numeric(image_year)
@@ -130,7 +132,7 @@ for (sitecode in sitecodes) {
             set.seed(0)
             tr_pixels <- subsample_classes(tr_pixels)
         }
-        model <- train_classifier(tr_pixels, ntree=1001, factors=c("year"))
+        model <- train_classifier(tr_pixels, ntree=1001, factors=c("aspect", "year"))
         save(model, file=model_file)
     }
 
