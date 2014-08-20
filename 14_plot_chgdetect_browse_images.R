@@ -104,6 +104,7 @@ plot_trajs <- function(x, aoi, classes, title_string='', size_scale=1,
         ggtitle(title_string)
 }
 
+notify(paste0('Plotting chgdetect browse images. ', length(chgtraj_files), ' images to process.'))
 retvals <- foreach (chgtraj_file=iter(chgtraj_files), 
                     chgtraj_lut_file=iter(chgtraj_lut_files),
                     .packages=c('stringr', 'tools', 'raster', 'plyr', 'grid', 
@@ -192,3 +193,5 @@ retvals <- foreach (chgtraj_file=iter(chgtraj_files),
 }
 
 stopCluster(cl)
+
+notify(paste0('Finished plotting chgdetect browse images.'))

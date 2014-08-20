@@ -18,6 +18,7 @@ library(tools)
 img_width <- 7
 img_height <- 7
 img_dpi <- 300
+type <- "cairo"
 
 overwrite <- TRUE
 
@@ -91,6 +92,7 @@ plot_classes <- function(x, aoi, classes, title_string='', size_scale=1,
         ggtitle(title_string)
 }
 
+notify(paste0('Plotting classified browse images. ', length(predclasses_files), ' images to process.'))
 retvals <- foreach (predclasses_file=iter(predclasses_files),
                     classeskey_file=iter(classeskey_files), 
                     .packages=c('stringr', 'tools', 'raster', 'plyr', 'grid', 
@@ -133,8 +135,10 @@ retvals <- foreach (predclasses_file=iter(predclasses_files),
     plot_classes(classes_rast, zoi, classes, title_string)
 
     ggsave(paste0(file_path_sans_ext(predclasses_file), '_browse.png'), 
-           width=img_width, height=img_height, dpi=img_dpi)
+           width=img_width, height=img_height, dpi=img_dpi, type=type)
 
 }
 
 stopCluster(cl)
+
+notify(paste0('Finished plotting classified browse images.'))
