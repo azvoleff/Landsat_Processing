@@ -17,8 +17,7 @@ overwrite <- TRUE
 
 predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi', 
                      'msavi_glcm_mean', 'msavi_glcm_variance', 
-                     'msavi_glcm_dissimilarity', 'elev', 'slope', 'aspect',
-                     'year')
+                     'msavi_glcm_dissimilarity', 'elev', 'slope', 'year')
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code

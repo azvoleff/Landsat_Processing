@@ -17,7 +17,7 @@ overwrite <- TRUE
 
 predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi', 
                      'msavi_glcm_mean', 'msavi_glcm_variance', 
-                     'msavi_glcm_dissimilarity', 'elev', 'slope', 'aspect')
+                     'msavi_glcm_dissimilarity', 'elev', 'slope', 'year')
 
 sites <- read.csv('Site_Code_Key.csv')
 sitecodes <- sites$Site.Name.Code
@@ -80,10 +80,18 @@ for (sitecode in sitecodes) {
         tr_pixels <- foreach(image_file=iter(image_files), .combine=rbind_if_pixel_data,
                              .packages=c('teamlucc', 'rgdal', 'sp', 'maptools')) %do% {
             image_stack <- stack(file.path(image_basedir, image_file))
-            # Assign standardized layer names to input image so that different images 
-            # can be used with the same model
-            names(image_stack) <- predictor_names
             image_year <- gsub('_', '', str_extract(image_file, '_[0-9]{4}_'))
+            # Drop the 13th layer (aspect) as it isn't all that useful for 
+            # these predictions.
+            image_stack <- dropLayer(image_stack, 13)
+
+            # Add year as a predictor
+            image_stack$year <- as.numeric(image_year)
+
+            # Assign standardized layer names to input image so that different 
+            # images can be used with the same model
+            names(image_stack) <- predictor_names
+
             # Find which column has the indicator of whether or not this polygon is 
             # valid for this year.
             year_col_name <- paste0('Class_', image_year)
@@ -99,18 +107,11 @@ for (sitecode in sitecodes) {
         }
         endCluster()
 
-        # Ensure aspect is coded as a factor
-        tr_pixels@x$aspect <- factor(tr_pixels@x$aspect)
-
-        # Add year as a predictor
-        tr_pixels@x$year <- tr_pixels@pixel_src$src
-        tr_pixels@x$year <- factor(tr_pixels@x$year)
-
         save(tr_pixels, file=tr_pixels_file)
     }
 
     ##########################################################################
-    # Train classifiier
+    # Train classifier
     
     # Function to subsample any classes in a pixel_data object that have more 
     # than maxpix pixels
@@ -129,7 +130,7 @@ for (sitecode in sitecodes) {
             set.seed(0)
             tr_pixels <- subsample_classes(tr_pixels)
         }
-        model <- train_classifier(tr_pixels, ntree=1001)
+        model <- train_classifier(tr_pixels, ntree=1001, factors=c("year"))
         save(model, file=model_file)
     }
 
