@@ -102,11 +102,11 @@ for (sitecode in sitecodes) {
         # Ensure aspect is coded as a factor
         tr_pixels@x$aspect <- factor(tr_pixels@x$aspect)
 
-        save(tr_pixels, file=tr_pixels_file)
-
         # Add year as a predictor
         tr_pixels@x$year <- tr_pixels@pixel_src$src
         tr_pixels@x$year <- factor(tr_pixels@x$year)
+
+        save(tr_pixels, file=tr_pixels_file)
     }
 
     ##########################################################################
