@@ -103,7 +103,8 @@ for (sitecode in unique(traj_freqs$sitecode)) {
               legend.key.size=unit(1.5, "line"),
               panel.grid.major=element_blank()) +
         facet_wrap(~ t0)
-    ggsave(file.path(traj_freqs_dir, paste('transitions', sitecode, 'colorplot.png', sep='_')),
+    ggsave(file.path(traj_freqs_dir, paste('transitions', sitecode, 
+                                           'colorplot.png', sep='_')),
            height=img_height, width=img_width, dpi=img_dpi)
 }
 
@@ -120,7 +121,8 @@ ggplot(traj_freqs) +
     xlab("Start of period") +
     ylab("Fraction of all pixels") +
     ggtitle("Time 0")
-ggsave(file.path(traj_freqs_dir, 'transition_frequencies_all_sites_normalized_time0.png'),
+ggsave(file.path(traj_freqs_dir, 
+                 'transition_frequencies_all_sites_normalized_time0.png'),
        height=img_height, width=img_width, dpi=img_dpi)
 
 # Plot trajectory frequencies by site
@@ -132,7 +134,8 @@ ggplot(traj_freqs) +
     xlab("End of period") +
     ylab("Fraction of all pixels") +
     ggtitle("Time 1")
-ggsave(file.path(traj_freqs_dir, 'transition_frequencies_all_sites_normalized_time1.png'),
+ggsave(file.path(traj_freqs_dir, 
+                 'transition_frequencies_all_sites_normalized_time1.png'),
        height=img_height, width=img_width, dpi=img_dpi)
 
 # Plot percentage of pixels changing over time
