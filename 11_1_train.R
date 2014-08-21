@@ -132,7 +132,9 @@ for (sitecode in sitecodes) {
             set.seed(0)
             tr_pixels <- subsample_classes(tr_pixels)
         }
-        model <- train_classifier(tr_pixels, ntree=1001, factors=c("aspect", "year"))
+        model <- train_classifier(tr_pixels, ntree=1001,
+                                  factors=list(aspect=c(1, 2, 3, 4),
+                                               year=c(1990, 1995, 2000, 2005, 2010)))
         save(model, file=model_file)
     }
 
