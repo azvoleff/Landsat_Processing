@@ -4,7 +4,8 @@ library(foreach)
 library(iterators)
 library(doParallel)
 
-registerDoParallel(n_cpus)
+cl <- makeCluster(n_cpus)
+registerDoParallel(cl)
 
 library(rgdal)
 library(stringr)
@@ -14,6 +15,8 @@ library(tools)
 redo_extract <- TRUE
 redo_training <- TRUE
 overwrite <- TRUE
+
+ntree <- 501
 
 predictor_names <- c('b1', 'b2', 'b3', 'b4', 'b5', 'b7', 'msavi', 
                      'msavi_glcm_mean', 'msavi_glcm_variance', 
@@ -125,7 +128,7 @@ for (sitecode in sitecodes) {
             set.seed(0)
             tr_pixels <- subsample_classes(tr_pixels)
         }
-        model <- train_classifier(tr_pixels, ntree=1001,
+        model <- train_classifier(tr_pixels, ntree=ntree,
                                   factors=list(aspect=c(1, 2, 3, 4),
                                                year=c(1990, 1995, 2000, 2005, 2010)))
         save(model, file=model_file)
@@ -136,3 +139,5 @@ for (sitecode in sitecodes) {
 }
 
 notify('Training finished.')
+
+stopCluster(cl)

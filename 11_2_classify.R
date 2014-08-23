@@ -92,7 +92,9 @@ num_res <- foreach (image_file=iter(image_files),
     # images can be used with the same model
     names(image_stack) <- predictor_names
 
-    results <- classify(image_stack, model)
+    results <- classify(image_stack, model,
+                        factors=list(aspect=c(1, 2, 3, 4),
+                                     year=c(1990, 1995, 2000, 2005, 2010)))
 
     # Make a mask of 1s and NAs, with clear areas marked with 1s
     image_mask <- overlay(image_stack[[1]], fmask, fun=function(img, msk) {
