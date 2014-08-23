@@ -26,9 +26,6 @@ out_base <-'H:/Data/Landsat'
 
 included_tiles <- read.csv('Included_tiles.csv')
 
-# included_sitecodes <- c('PSH', 'NAK', 'UDZ')
-# included_tiles <- included_tiles[included_tiles$sitecode %in% included_sitecodes, ]
-
 foreach (sitecode=iter(included_tiles$sitecode),
          wrspath=iter(included_tiles$path),
          wrsrow=iter(included_tiles$row),

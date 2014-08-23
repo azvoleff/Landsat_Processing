@@ -1,8 +1,5 @@
 source("0_settings.R")
 
-sites <- read.csv('Site_Code_Key.csv')
-sitecodes <- sites$Site.Name.Code
-
 in_folder <- 'H:/Data/Landsat'
 out_folder <- 'D:/Landsat_HDFs'
 

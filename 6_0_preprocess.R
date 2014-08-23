@@ -12,14 +12,7 @@ reprocess <- FALSE
 
 registerDoParallel(n_cpus)
 
-sites <- read.csv('Site_Code_Key.csv')
-sitecodes <- sites$Site.Name.Code
-
 scene_topocorr_key <- read.csv('Scene_topocorr_key.csv')
-
-sitecodes <- sites$Site.Name.Code
-
-sitecodes <- c('UDZ')
 
 sitecodes_rep <- c()
 dem_paths <- c()

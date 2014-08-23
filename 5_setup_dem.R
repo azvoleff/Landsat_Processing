@@ -2,11 +2,6 @@ source('0_settings.R')
 
 library(rgeos)
 
-sites <- read.csv('Site_Code_Key.csv')
-sitecodes <- sites$Site.Name.Code
-
-sitecodes <- c('PSH')
-
 # NOTE IF SMOOTHING IS CHANGED NEED TO USE THE HACKED RASTER CODE AND UPDATE 
 # THE CALL TO AUTO_SETUO_DEM BELOW.
 smoothing <- 1

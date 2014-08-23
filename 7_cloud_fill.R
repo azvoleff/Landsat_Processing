@@ -7,13 +7,6 @@ library(doParallel)
 
 registerDoParallel(n_cpus)
 
-sites <- read.csv('Site_Code_Key.csv')
-sitecodes <- sites$Site.Name.Code
-
-#sitecodes <- c('PSH', 'RNF', 'YAN', 'BBS', 'BCI', 'KRP', 'MAS', 'NAK')
-#sitecodes <- c('BIF', 'CAX', 'COU', 'CSN', 'NNN', 'UDZ', 'VB', 'YAS')
-sitecodes <- c('RNF')
-
 scene_topocorr_key <- read.csv('Scene_topocorr_key.csv')
 
 overwrite <- TRUE

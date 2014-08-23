@@ -1,11 +1,6 @@
 source('0_settings.R')
 
-sites <- read.csv('Site_Code_Key.csv')
-sitecodes <- sites$Site.Name.Code
-
 scene_topocorr_key <- read.csv('Scene_topocorr_key.csv')
-
-sitecodes <- sites$Site.Name.Code
 
 total_preprocessed <- 0
 total_not_preprocessed <- 0

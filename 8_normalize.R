@@ -14,9 +14,6 @@ library(tools)
 reprocess <- TRUE
 overwrite <- TRUE
 
-sites <- read.csv('Site_Code_Key.csv')
-sitecodes <- sites$Site.Name.Code
-
 input_dir <- file.path(prefix, 'Landsat', 'Cloud_Filled')
 output_dir <- file.path(prefix, 'Landsat', 'Cloud_Filled_Normalized')
 

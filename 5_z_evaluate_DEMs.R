@@ -9,9 +9,6 @@ library(iterators)
 
 registerDoParallel(10)
 
-sites <- read.csv('Site_Code_Key.csv')
-sitecodes <- sites$Site.Name.Code
-
 dem_freqs <- foreach(sitecode=iter(sitecodes), .combine=rbind, .inorder=FALSE,
          .packages=c('teamlucc', 'stringr', 'rgeos', 'sp', 'rgdal', 'foreach', 
                      'iterators')) %dopar% {

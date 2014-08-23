@@ -13,9 +13,6 @@ library(tools)
 overwrite <- TRUE
 reprocess <- TRUE
 
-sites <- read.csv('Site_Code_Key.csv')
-sitecodes <- sites$Site.Name.Code
-
 n_grey <- 64
 window_size <- c(5, 5)
 shift <- list(c(0,1), c(1,1), c(1,0), c(1,-1))

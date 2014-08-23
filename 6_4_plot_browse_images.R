@@ -14,14 +14,7 @@ maxpixels <- 500000
 image_width <- 1200
 image_height <- 1200
 
-sites <- read.csv('Site_Code_Key.csv')
-sitecodes <- sites$Site.Name.Code
-
 scene_topocorr_key <- read.csv('Scene_topocorr_key.csv')
-
-sitecodes <- sites$Site.Name.Code
-
-sitecodes <- 'BIF'
 
 for (sitecode in sitecodes) {
     message(paste0('Processing browse images for ', sitecode, '...'))

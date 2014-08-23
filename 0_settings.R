@@ -8,6 +8,13 @@ source('notify.R')
 ###############################################################################
 # General settings (update as necessary)
 
+sites <- read.csv('Site_Code_Key.csv')
+sitecodes <- sites$Site.Name.Code
+sitecodes <- c("BIF", "CAX", "COU", "CSN",
+               "MAS", "PSH", "RNF", "VB",
+               "YAN", "YAS", "BCI", "BBS",
+               "UDZ", "NAK")
+
 PLOT_WIDTH <- 6.5
 PLOT_HEIGHT <- 6.5
 PLOT_DPI <- 300

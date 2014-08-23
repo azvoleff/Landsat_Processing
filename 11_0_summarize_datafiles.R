@@ -9,9 +9,6 @@ library(reshape2)
 
 overwrite <- TRUE
 
-sites <- read.csv('Site_Code_Key.csv')
-sitecodes <- sites$Site.Name.Code
-
 ###############################################################################
 # Summarize cloud fills and normalized data
 get_status <- function(pattern, name) {

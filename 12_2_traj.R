@@ -17,13 +17,6 @@ overwrite <- TRUE
 
 chg_threshold_min <- 100
 
-sites <- read.csv('Site_Code_Key.csv')
-sitecodes <- sites$Site.Name.Code
-sitecodes <- c("BIF", "CAX", "COU", "CSN",
-               "MAS", "PSH", "RNF", "VB",
-               "YAN", "YAS", "BCI", "BBS",
-               "UDZ", "NAK")
-
 zoi_folder <- file.path(prefix, 'TEAM', 'ZOIs')
 predictions_dir <- file.path(prefix, 'Landsat', 'Composites', 'Predictions')
 chgdetect_dir <- file.path(prefix, 'Landsat', 'Composites', 'Change_Detection')

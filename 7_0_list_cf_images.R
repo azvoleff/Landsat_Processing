@@ -2,9 +2,6 @@ source('0_settings.R')
 
 library(stringr)
 
-sites <- read.csv('Site_Code_Key.csv')
-sitecodes <- sites$Site.Name.Code
-
 input_dir <- file.path(prefix, 'Landsat', 'Cloud_Filled')
 
 image_files <- dir(input_dir, 

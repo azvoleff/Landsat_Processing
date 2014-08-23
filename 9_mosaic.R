@@ -22,11 +22,6 @@ builddem <- TRUE
 #imgtype <- 'normalized'
 imgtype <- 'raw'
 
-sites <- read.csv('Site_Code_Key.csv')
-sitecodes <- sites$Site.Name.Code
-
-sitecodes <- 'UDZ'
-
 stopifnot(imgtype %in% c('normalized', 'raw'))
 
 input_dir <- file.path(prefix, 'Landsat', 'Cloud_Filled')
