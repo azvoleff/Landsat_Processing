@@ -35,6 +35,13 @@ predclasses_files <- dir(image_basedir,
 classeskey_files <- dir(image_basedir,
                         pattern=paste0('^[a-zA-Z]{2,3}_mosaic_[0-9]{4}_predictors_classeskey.csv$'),
                         full.names=TRUE)
+
+# Limit to only the selected sites
+predclasses_files <- predclasses_files[str_extract(basename(predclasses_files),
+                                                   '^[a-zA-Z]*') %in% sitecodes]
+classeskey_files <- classeskey_files[str_extract(basename(classeskey_files),
+                                                 '^[a-zA-Z]*') %in% sitecodes]
+
 stopifnot(length(classeskey_files) == length(predclasses_files))
 
 #' Function to plot classified image for a given year

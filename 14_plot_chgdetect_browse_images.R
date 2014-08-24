@@ -35,6 +35,13 @@ chgtraj_files <- dir(image_basedir,
 chgtraj_lut_files <- dir(image_basedir,
                          pattern=paste0('^[a-zA-Z]{2,3}_[0-9]{4}-[0-9]{4}_chgdetect_chgtraj_lut.csv$'),
                          full.names=TRUE)
+
+# Limit to only the selected sites
+chgtraj_files <- chgtraj_files[str_extract(basename(chgtraj_files), 
+                                           '^[a-zA-Z]*') %in% sitecodes]
+chgtraj_lut_files <- chgtraj_lut_files[str_extract(basename(chgtraj_lut_files), 
+                                                   '^[a-zA-Z]*') %in% sitecodes]
+
 stopifnot(length(chgtraj_files) == length(chgtraj_lut_files))
 
 # chgtraj_file <- chgtraj_files[1]
