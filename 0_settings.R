@@ -14,6 +14,7 @@ sitecodes <- c("BIF", "CAX", "COU", "CSN",
                "MAS", "PSH", "RNF", "VB",
                "YAN", "YAS", "BCI", "BBS",
                "UDZ", "NAK")
+sitecodes <- c("UDZ", "PSH")
 
 PLOT_WIDTH <- 6.5
 PLOT_HEIGHT <- 6.5
