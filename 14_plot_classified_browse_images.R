@@ -10,13 +10,14 @@ registerDoParallel(cl)
 library(rgdal)
 library(raster)
 library(ggplot2)
+library(gridExtra)
 library(plyr)
 library(grid)
 library(stringr)
 library(tools)
 
-img_width <- 7
-img_height <- 7
+img_width <- 10
+img_height <- 7.5
 img_dpi <- 300
 type <- "cairo"
 
@@ -28,21 +29,6 @@ image_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Predictions')
 out_dir <- image_basedir
 
 stopifnot(file_test('-d', out_dir))
-
-predclasses_files <- dir(image_basedir,
-                         pattern=paste0('^[a-zA-Z]{2,3}_mosaic_[0-9]{4}_predictors_predclasses.tif$'),
-                         full.names=TRUE)
-classeskey_files <- dir(image_basedir,
-                        pattern=paste0('^[a-zA-Z]{2,3}_mosaic_[0-9]{4}_predictors_classeskey.csv$'),
-                        full.names=TRUE)
-
-# Limit to only the selected sites
-predclasses_files <- predclasses_files[str_extract(basename(predclasses_files),
-                                                   '^[a-zA-Z]*') %in% sitecodes]
-classeskey_files <- classeskey_files[str_extract(basename(classeskey_files),
-                                                 '^[a-zA-Z]*') %in% sitecodes]
-
-stopifnot(length(classeskey_files) == length(predclasses_files))
 
 #' Function to plot classified image for a given year
 #'
@@ -99,51 +85,71 @@ plot_classes <- function(x, aoi, classes, title_string='', size_scale=1,
         ggtitle(title_string)
 }
 
-notify(paste0('Plotting classified browse images. ', length(predclasses_files), ' images to process.'))
-retvals <- foreach (predclasses_file=iter(predclasses_files),
-                    classeskey_file=iter(classeskey_files), 
-                    .packages=c('stringr', 'tools', 'raster', 'plyr', 'grid', 
-                                'rgdal', 'ggplot2')) %dopar% {
-    sitecode <- str_extract(basename(predclasses_file), '^[a-zA-Z]*')
+notify(paste0('Plotting classified browse images. ', length(sitecodes), ' sites to process.'))
+for (sitecode in sitecodes) {
+    predclasses_files <- dir(image_basedir,
+                             pattern=paste0(sitecode, '_mosaic_[0-9]{4}_predictors_predclasses.tif$'),
+                             full.names=TRUE)
+    classeskey_files <- dir(image_basedir,
+                            pattern=paste0(sitecode, '_mosaic_[0-9]{4}_predictors_classeskey.csv$'),
+                            full.names=TRUE)
 
-    year <- str_extract(predclasses_file, '[0-9]{4}')
-    classes_rast <- stack(predclasses_file)
-    classes_rast <- sampleRegular(classes_rast, 1e6, asRaster=TRUE, 
-                                  useGDAL=TRUE)
+    stopifnot(length(classeskey_files) == length(predclasses_files))
 
     # Mask out area outside of ZOI
-    zoi_file <- dir(zoi_folder, pattern=paste0('^ZOI_', sitecode, '_[0-9]{4}.RData'), 
+    zoi_file <- dir(zoi_folder, pattern=paste0('^ZOI_', sitecode, 
+                                               '_[0-9]{4}.RData'), 
                     full.names=TRUE)
     stopifnot(length(zoi_file) == 1)
     load(zoi_file)
-    zoi <- spTransform(zoi, CRS(proj4string(classes_rast)))
-    classes_rast <- crop(classes_rast, zoi)
-    zoi_rast <- rasterize(zoi, classes_rast, 1, silent=TRUE)
-    classes_rast[is.na(zoi_rast)] <- NA
+    zoi <- spTransform(zoi, CRS(proj4string(stack(predclasses_files[1]))))
 
-    classeskey <- read.csv(classeskey_file)
-    classes <- data.frame(code=NA,
-                          label=class_names_abbrev,
-                          color=class_colors,
-                          stringsAsFactors=FALSE)
+    plots <- foreach (predclasses_file=iter(predclasses_files),
+                      classeskey_file=iter(classeskey_files),
+                      .packages=c('stringr', 'tools', 'raster', 'plyr', 'grid', 
+                                  'rgdal', 'ggplot2')) %dopar% {
+            year <- str_extract(predclasses_file, '[0-9]{4}')
 
-    # Assign codes to classes that are in this image. Assign codes to the 
-    # others just so the plot code doesn't choke, and so these classes remain 
-    # in the legend, even if they do not appear in the image.
-    #
-    # First fill in proper codes for classes that do appear in image
-    classes_rows_match <- match(classeskey$class, class_names_R)
-    classes[classes_rows_match, ]$code <- classeskey$code
-    # Now fill in random codes for classes that don't appear in the image
-    classes_rows_nas <- is.na(classes$code)
-    classes[classes_rows_nas, ]$code <- seq(100, length.out=sum(classes_rows_nas))
+            classeskey <- read.csv(classeskey_file)
+            classes <- data.frame(code=NA,
+                                  label=class_names_abbrev,
+                                  color=class_colors,
+                                  stringsAsFactors=FALSE)
+            # Assign codes to classes that are in this image. Assign codes to the 
+            # others just so the plot code doesn't choke, and so these classes remain 
+            # in the legend, even if they do not appear in the image.
+            #
+            # First fill in proper codes for classes that do appear in image
+            classes_rows_match <- match(classeskey$class, class_names_R)
+            classes[classes_rows_match, ]$code <- classeskey$code
+            # Now fill in random codes for classes that don't appear in the image
+            classes_rows_nas <- is.na(classes$code)
+            classes[classes_rows_nas, ]$code <- seq(100, length.out=sum(classes_rows_nas))
 
-    title_string <- paste(sitecode, year, sep=' - ')
-    plot_classes(classes_rast, zoi, classes, title_string)
 
-    ggsave(paste0(file_path_sans_ext(predclasses_file), '_browse.png'), 
+            classes_rast <- stack(predclasses_file)
+            classes_rast <- sampleRegular(classes_rast, 1e6, asRaster=TRUE, 
+                                          useGDAL=TRUE)
+            classes_rast <- crop(classes_rast, zoi)
+            zoi_rast <- rasterize(zoi, classes_rast, 1, silent=TRUE)
+            classes_rast[is.na(zoi_rast)] <- NA
+
+
+            title_string <- paste(sitecode, year, sep=' - ')
+            plot_classes(classes_rast, zoi, classes, title_string)
+    }
+
+    # Below is from: http://bit.ly/1qhIgOh
+    
+    # For all one page:
+    ggsave(file.path(out_dir, paste0(sitecode, "_classified_browse.png")), 
+           plot=do.call(arrangeGrob, plots),
            width=img_width, height=img_height, dpi=img_dpi, type=type)
 
+    # # For gridded 2x2
+    # ggsave(file.path(out_dir, paste0(sitecode, "_classified_browse.png")), 
+    #        do.call(marrangeGrob, c(l, list(nrow=2, ncol=2))),
+    #        width=img_width, height=img_height, dpi=img_dpi, type=type)
 }
 
 stopCluster(cl)

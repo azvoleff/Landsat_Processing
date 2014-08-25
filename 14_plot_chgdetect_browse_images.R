@@ -10,13 +10,14 @@ registerDoParallel(cl)
 library(rgdal)
 library(raster)
 library(ggplot2)
+library(gridExtra)
 library(plyr)
 library(grid)
 library(stringr)
 library(tools)
 
-img_width <- 7
-img_height <- 7
+img_width <- 10
+img_height <- 7.5
 img_dpi <- 300
 type <- "cairo"
 
@@ -28,21 +29,6 @@ image_basedir <- file.path(prefix, 'Landsat', 'Composites', 'Change_Detection')
 out_dir <- image_basedir
 
 stopifnot(file_test('-d', out_dir))
-
-chgtraj_files <- dir(image_basedir,
-                     pattern=paste0('^[a-zA-Z]{2,3}_[0-9]{4}-[0-9]{4}_chgdetect_chgtraj.tif$'),
-                     full.names=TRUE)
-chgtraj_lut_files <- dir(image_basedir,
-                         pattern=paste0('^[a-zA-Z]{2,3}_[0-9]{4}-[0-9]{4}_chgdetect_chgtraj_lut.csv$'),
-                         full.names=TRUE)
-
-# Limit to only the selected sites
-chgtraj_files <- chgtraj_files[str_extract(basename(chgtraj_files), 
-                                           '^[a-zA-Z]*') %in% sitecodes]
-chgtraj_lut_files <- chgtraj_lut_files[str_extract(basename(chgtraj_lut_files), 
-                                                   '^[a-zA-Z]*') %in% sitecodes]
-
-stopifnot(length(chgtraj_files) == length(chgtraj_lut_files))
 
 # chgtraj_file <- chgtraj_files[1]
 # chgtraj_lut_file <- chgtraj_lut_files[1]
@@ -70,7 +56,7 @@ stopifnot(length(chgtraj_files) == length(chgtraj_lut_files))
 #' @param size_scale a number used to scale the size of the plot text
 #' @param maxpixels the maximum number of pixels from x to use in plotting
 plot_trajs <- function(x, aoi, classes, title_string='', size_scale=1, 
-                       maxpixels=2e6, legend_title="Cover") {
+                       maxpixels=2e6, legend_title="Change type") {
     aoi_tr <- spTransform(aoi, CRS(proj4string(x)))
     aoi_tr$ID <- row.names(aoi_tr)
     if (!('label' %in% names(aoi_tr))) {
@@ -111,92 +97,109 @@ plot_trajs <- function(x, aoi, classes, title_string='', size_scale=1,
         ggtitle(title_string)
 }
 
-notify(paste0('Plotting chgdetect browse images. ', length(chgtraj_files), ' images to process.'))
-retvals <- foreach (chgtraj_file=iter(chgtraj_files), 
-                    chgtraj_lut_file=iter(chgtraj_lut_files),
-                    .packages=c('stringr', 'tools', 'raster', 'plyr', 'grid', 
-                                'rgdal', 'ggplot2')) %dopar% {
-    sitecode <- str_extract(basename(chgtraj_file), '^[a-zA-Z]*')
-    year <- str_extract(chgtraj_file, '[0-9]{4}')
-    chgtraj_rast <- raster(chgtraj_file)
-    chgtraj_rast <- sampleRegular(chgtraj_rast, 1e6, asRaster=TRUE, 
-                                  useGDAL=TRUE)
+notify(paste0('Plotting chgdetect browse images. ', length(sitecodes), ' sites to process.'))
+for (sitecode in sitecodes) {
+    chgtraj_files <- dir(image_basedir,
+                         pattern=paste0(sitecode, '_[0-9]{4}-[0-9]{4}_chgdetect_chgtraj.tif$'),
+                         full.names=TRUE)
+    chgtraj_lut_files <- dir(image_basedir,
+                             pattern=paste0(sitecode, '_[0-9]{4}-[0-9]{4}_chgdetect_chgtraj_lut.csv$'),
+                             full.names=TRUE)
+    stopifnot(length(chgtraj_files) == length(chgtraj_lut_files))
 
-    # Mask out area outside of ZOI
+    plot_titles <- str_extract(chgtraj_files, "[0-9]{4}-[0-9]{4}")
+
     zoi_file <- dir(zoi_folder, pattern=paste0('^ZOI_', sitecode, '_[0-9]{4}.RData'), 
                     full.names=TRUE)
     stopifnot(length(zoi_file) == 1)
     load(zoi_file)
-    zoi <- spTransform(zoi, CRS(proj4string(chgtraj_rast)))
-    chgtraj_rast <- crop(chgtraj_rast, zoi)
 
-    zoi_rast <- rasterize(zoi, chgtraj_rast, 1, silent=TRUE)
-    chgtraj_rast[is.na(zoi_rast)] <- NA
-
-    traj_codes <- read.csv(chgtraj_lut_file)
-    traj_codes$t0_name_abbrev <- class_names_abbrev[match(traj_codes$t0_name, class_names_R)]
-    traj_codes$t1_name_abbrev <- class_names_abbrev[match(traj_codes$t1_name, class_names_R)]
-    traj_codes$trans_name <- with(traj_codes, paste(t0_name_abbrev, t1_name_abbrev, sep=' -> '))
-
-    # Make forest/non-forest transition image
-    traj_codes$ForestChange <- NA
-    traj_codes$ForestChange[with(traj_codes, (t0_name != "Natural.forest") & (t1_name == "Natural.forest"))] <- 1
-    traj_codes$ForestChange[with(traj_codes, (t0_name == "Natural.forest") & (t1_name != "Natural.forest"))] <- 2
-    forest_subs <- data.frame(from=traj_codes$Code[!is.na(traj_codes$ForestChange)],
-                              to=traj_codes$ForestChange[!is.na(traj_codes$ForestChange)])
-    ForestChange <- chgtraj_rast
-    ForestChange <- subs(chgtraj_rast, forest_subs)
-    if (cellStats(is.na(ForestChange), "sum") != ncell(ForestChange)) {
-        plot_trajs(ForestChange, zoi,
-                   data.frame(code=c(1, 2),
-                              label=c("Forest gain", "Forest loss"),
-                              color=c("#33FF33", "#FF3333"),
-                              stringsAsFactors=FALSE),
-                   title="Forest change")
-        ggsave(paste0(file_path_sans_ext(chgtraj_file), '_transitions_natforest_change.png'), 
-               width=img_width, height=img_height, dpi=img_dpi, type=type)
+    chgtraj_rasts <- foreach (chgtraj_file=iter(chgtraj_files), 
+                        chgtraj_lut_file=iter(chgtraj_lut_files),
+                        .packages=c('stringr', 'tools', 'raster', 'plyr', 'grid', 
+                                    'rgdal', 'ggplot2')) %dopar% {
+        sitecode <- str_extract(basename(chgtraj_file), '^[a-zA-Z]*')
+        year <- str_extract(chgtraj_file, '[0-9]{4}')
+        chgtraj_rast <- raster(chgtraj_file)
+        chgtraj_rast <- sampleRegular(chgtraj_rast, 1e6, asRaster=TRUE, 
+                                      useGDAL=TRUE)
+        # Mask out area outside of ZOI
+        zoi <- spTransform(zoi, CRS(proj4string(chgtraj_rast)))
+        chgtraj_rast <- crop(chgtraj_rast, zoi)
+        zoi_rast <- rasterize(zoi, chgtraj_rast, 1, silent=TRUE)
+        chgtraj_rast[is.na(zoi_rast)] <- NA
+        chgtraj_rast
     }
 
-    # Make plantation forest/non plantation forest transition image
-    traj_codes$PlantChange <- NA
-    traj_codes$PlantChange[with(traj_codes, (t0_name != "Plantation.forest") & (t1_name == "Plantation.forest"))] <- 1
-    traj_codes$PlantChange[with(traj_codes, (t0_name == "Plantation.forest") & (t1_name != "Plantation.forest"))] <- 2
-    planforest_subs <- data.frame(from=traj_codes$Code[!is.na(traj_codes$PlantChange)],
-                                  to=traj_codes$PlantChange[!is.na(traj_codes$PlantChange)])
-    PlantChange <- chgtraj_rast
-    PlantChange <- subs(chgtraj_rast, planforest_subs)
-    # Only make the plot if there are cells that show change
-    if (cellStats(is.na(PlantChange), "sum") != ncell(PlantChange)) {
-        plot_trajs(PlantChange, zoi,
-                   data.frame(code=c(1, 2),
-                              label=c("To plantation", "From plantation"),
-                              color=c("#33FF33", "#FF3333"),
-                              stringsAsFactors=FALSE),
-                   title="Plantation change")
-        ggsave(paste0(file_path_sans_ext(chgtraj_file), '_transitions_plantation_change.png'), 
-               width=img_width, height=img_height, dpi=img_dpi, type=type)
+    traj_code_dfs <- foreach (chgtraj_lut_file=iter(chgtraj_lut_files)) %dopar% {
+        traj_codes <- read.csv(chgtraj_lut_file)
+        traj_codes$t0_name_abbrev <- class_names_abbrev[match(traj_codes$t0_name, class_names_R)]
+        traj_codes$t1_name_abbrev <- class_names_abbrev[match(traj_codes$t1_name, class_names_R)]
+        traj_codes$trans_name <- with(traj_codes, paste(t0_name_abbrev, t1_name_abbrev, sep=' -> '))
+        traj_codes
     }
 
-    # Make ag/non-ag transition image
-    ag_classes <-  c("Agriculture", "Plantation.forest")
-    traj_codes$AgChange <- NA
-    traj_codes$AgChange[with(traj_codes, !(t0_name %in% ag_classes) & (t1_name %in% ag_classes))] <- 1
-    traj_codes$AgChange[with(traj_codes, (t0_name %in% ag_classes) & !(t1_name %in% ag_classes))] <- 2
-    ag_subs <- data.frame(from=traj_codes$Code[!is.na(traj_codes$AgChange)],
-                              to=traj_codes$AgChange[!is.na(traj_codes$AgChange)])
-    AgChange <- chgtraj_rast
-    AgChange <- subs(chgtraj_rast, ag_subs)
-    if (cellStats(is.na(AgChange), "sum") != ncell(AgChange)) {
-        plot_trajs(AgChange, zoi,
-                   data.frame(code=c(1, 2),
-                              label=c("Ag gain", "Ag loss"),
-                              color=c("#33FF33", "#FF3333"),
-                              stringsAsFactors=FALSE),
-                   title="Agricultural change")
-        ggsave(paste0(file_path_sans_ext(chgtraj_file), '_transitions_ag_change.png'), 
-               width=img_width, height=img_height, dpi=img_dpi, type=type)
+    make_traj_plot <- function(chg_rast, traj_codes, classes, 
+                               gain_legend, loss_legend,
+                               plot_titles, plot_file) {
+        plots <- foreach (chgtraj_rast=iter(chgtraj_rasts),
+                          traj_codes=iter(traj_code_dfs),
+                          plot_title=iter(plot_titles),
+                          .export=c("plot_trajs", "zoi")) %dopar% {
+            # Make forest/non-forest transition image
+            traj_codes$Change <- NA
+            traj_codes$Change[with(traj_codes, (t0_name != classes) & (t1_name == classes))] <- 1
+            traj_codes$Change[with(traj_codes, (t0_name == classes) & (t1_name != classes))] <- 2
+            classes_subs <- data.frame(from=traj_codes$Code[!is.na(traj_codes$Change)],
+                                       to=traj_codes$Change[!is.na(traj_codes$Change)])
+            Change <- subs(chgtraj_rast, classes_subs)
+            if (cellStats(is.na(Change), "sum") != ncell(Change)) {
+                this_plot <- plot_trajs(Change, zoi,
+                                        classes=data.frame(code=c(1, 2),
+                                                           label=c(gain_legend, loss_legend),
+                                                           color=c("#33FF33", "#FF3333"),
+                                                           stringsAsFactors=FALSE),
+                                        title_string=plot_title)
+            } else {
+                this_plot <- c()
+            }
+            this_plot
+        }
+
+        plots <- plots[unlist(lapply(plots, function(x) !is.null(x)))]
+
+        if (length(plots) > 0) {
+            ggsave(file.path(out_dir, plot_file),
+                   plot=do.call(arrangeGrob, plots),
+                   width=img_width, height=img_height, dpi=img_dpi, type=type)
+        }
+
     }
 
+    # classes <- c("Natural.forest")
+    # gain_legend <- "Forest gain"
+    # loss_legend <- "Forest loss"
+    # plot_title <- plot_titles
+    # plot_file <- paste0(sitecode, "_natforest_change.png")
+
+    make_traj_plot(chg_rast, traj_codes, c("Natural.forest"),
+                   "Forest gain", "Forest loss", plot_titles,
+                    paste0(sitecode, "_natforest_change.png"))
+
+    #
+    #classes <- c("Plantation.forest")
+    # "To plantation"
+    # "From plantation"
+    # plot_titles
+    # paste0(sitecode, "_planforest_change.png")
+
+    make_traj_plot(chg_rast, traj_codes, c("Plantation.forest"),
+                   "To plantation", "From plantation", plot_titles, 
+                    paste0(sitecode, "_planforest_change.png"))
+
+    make_traj_plot(chg_rast, traj_codes, c("Agriculture", "Plantation.forest"),
+                   "To agriculture", "From agriculture", plot_titles,
+                   paste0(sitecode, "_ag_change.png"))
 }
 
 stopCluster(cl)
