@@ -14,7 +14,6 @@ sitecodes <- c("BIF", "CAX", "COU", "CSN",
                "MAS", "PSH", "RNF", "VB",
                "YAN", "YAS", "BCI", "BBS",
                "UDZ", "NAK")
-sitecodes <- c("UDZ", "PSH")
 
 PLOT_WIDTH <- 6.5
 PLOT_HEIGHT <- 6.5
@@ -36,7 +35,7 @@ rasterOptions(tmpdir=temp)
 # Specify how many processors to use for parallel processing. On CI-TEAM, this 
 # should be set to 6. On your laptop, set it somewhere between 2 and 4.
 if (Sys.info()[4] == 'CI-TEAM') {
-    n_cpus <- 6
+    n_cpus <- 8
 } else if (Sys.info()[4] == 'vertica1.team.sdsc.edu') {
     n_cpus <- 16
 } else {
